@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   createDebt,
@@ -22,6 +22,7 @@ const defaultForm = {
 };
 
 const DebtsPage = () => {
+  const formRef = useRef(null);
   const [debts, setDebts] = useState([]);
   const [jars, setJars] = useState([]);
   const [form, setForm] = useState(defaultForm);
@@ -89,6 +90,7 @@ const DebtsPage = () => {
       settled_at: debt.settled_at?.slice(0, 10) || '',
       reason: debt.reason || ''
     });
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleDelete = async (debt) => {
@@ -111,22 +113,27 @@ const DebtsPage = () => {
   };
 
   return (
-    <div className="page-stack">
-      <section className="card section-card">
-        <p className="card-label">Nợ giữa các hũ</p>
-        <h3>Theo dõi hoàn trả nội bộ</h3>
-        <p className="section-copy">
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(245,158,11,0.16)_0%,rgba(239,68,68,0.12)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Nợ giữa các hũ</p>
+        <h3 className="mt-2 text-3xl font-bold tracking-tight text-white">Theo dõi hoàn trả nội bộ</h3>
+        <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
           Màn hình này dành cho các khoản tạm ứng giữa các hũ trong mô hình 6 hũ.
         </p>
-        {message ? <p className="section-copy">{message}</p> : null}
-        {error ? <p className="callout callout-warning">{error}</p> : null}
+        {message ? <p className="mt-4 text-sm text-slate-400">{message}</p> : null}
+        {error ? (
+          <div className="mt-4 rounded-3xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+            {error}
+          </div>
+        ) : null}
       </section>
 
-      <FormSection
-        label="Nhập liệu"
-        title={editingId ? 'Chỉnh sửa khoản nợ' : 'Tạo khoản nợ mới'}
-      >
-        <form className="entity-form" onSubmit={handleSubmit}>
+      <div ref={formRef}>
+        <FormSection
+          label="Nhập liệu"
+          title={editingId ? 'Chỉnh sửa khoản nợ' : 'Tạo khoản nợ mới'}
+        >
+          <form className="entity-form" onSubmit={handleSubmit}>
           <div className="form-grid">
             <label className="field-group">
               <span>Từ hũ</span>
@@ -154,17 +161,38 @@ const DebtsPage = () => {
 
             <label className="field-group">
               <span>Tháng</span>
-              <input name="month" value={form.month} onChange={handleChange} placeholder="2026-04" required />
+              <input
+                aria-label="Tháng khoản nợ"
+                name="month"
+                type="month"
+                value={form.month}
+                onChange={handleChange}
+                required
+              />
             </label>
 
             <label className="field-group">
               <span>Số tiền</span>
-              <input name="amount" type="number" value={form.amount} onChange={handleChange} required />
+              <input
+                aria-label="Số tiền khoản nợ"
+                name="amount"
+                type="number"
+                value={form.amount}
+                onChange={handleChange}
+                required
+              />
             </label>
 
             <label className="field-group">
               <span>Ngày ghi nhận</span>
-              <input type="date" name="debt_date" value={form.debt_date} onChange={handleChange} required />
+              <input
+                aria-label="Ngày ghi nhận nợ"
+                type="date"
+                name="debt_date"
+                value={form.debt_date}
+                onChange={handleChange}
+                required
+              />
             </label>
 
             <label className="field-group">
@@ -179,12 +207,23 @@ const DebtsPage = () => {
           <div className="form-grid">
             <label className="field-group">
               <span>Ngày tất toán</span>
-              <input type="date" name="settled_at" value={form.settled_at} onChange={handleChange} />
+              <input
+                aria-label="Ngày tất toán khoản nợ"
+                type="date"
+                name="settled_at"
+                value={form.settled_at}
+                onChange={handleChange}
+              />
             </label>
 
             <label className="field-group field-group-wide">
               <span>Lý do</span>
-              <input name="reason" value={form.reason} onChange={handleChange} />
+              <input
+                aria-label="Lý do khoản nợ"
+                name="reason"
+                value={form.reason}
+                onChange={handleChange}
+              />
             </label>
           </div>
 
@@ -196,8 +235,9 @@ const DebtsPage = () => {
               Làm mới form
             </button>
           </div>
-        </form>
-      </FormSection>
+          </form>
+        </FormSection>
+      </div>
 
       <DebtTable items={debts} onEdit={handleEdit} onDelete={handleDelete} />
     </div>

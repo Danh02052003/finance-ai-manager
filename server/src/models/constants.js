@@ -11,6 +11,16 @@ export const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 
 export const TRANSACTION_DIRECTIONS = ['expense', 'income_adjustment', 'transfer'];
 
+export const TRANSACTION_CATEGORIES = [
+  'food_drink',
+  'bills',
+  'investment',
+  'learning',
+  'family',
+  'charity',
+  'uncategorized'
+];
+
 export const JAR_DEBT_STATUSES = ['open', 'settled'];
 
 export const AI_ADVICE_LOG_STATUSES = ['queued', 'completed', 'failed'];

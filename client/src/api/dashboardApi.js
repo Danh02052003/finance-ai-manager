@@ -6,6 +6,8 @@ export const getDashboard = () => apiRequest('/dashboard');
 
 export const getJars = () => apiRequest('/jars');
 
+export const getJarActualBalances = () => apiRequest('/jar-actual-balances');
+
 export const getTransactions = () => apiRequest('/transactions');
 
 export const getDebts = () => apiRequest('/debts');
@@ -64,6 +66,23 @@ export const deleteMonthlyIncome = (monthlyIncomeId) =>
   });
 
 export const getJarAllocations = () => apiRequest('/jar-allocations');
+
+export const createJarActualBalance = (payload) =>
+  apiRequest('/jar-actual-balances', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+
+export const updateJarActualBalance = (jarActualBalanceId, payload) =>
+  apiRequest(`/jar-actual-balances/${jarActualBalanceId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  });
+
+export const deleteJarActualBalance = (jarActualBalanceId) =>
+  apiRequest(`/jar-actual-balances/${jarActualBalanceId}`, {
+    method: 'DELETE'
+  });
 
 export const createJarAllocation = (payload) =>
   apiRequest('/jar-allocations', {

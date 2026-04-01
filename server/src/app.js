@@ -2,7 +2,9 @@ import cors from 'cors';
 import express from 'express';
 import morgan from 'morgan';
 
+import assistantRoutes from './routes/assistantRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import jarActualBalanceRoutes from './routes/jarActualBalanceRoutes.js';
 import debtRoutes from './routes/debtRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import importRoutes from './routes/importRoutes.js';
@@ -17,9 +19,11 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
+app.use('/api/assistant', assistantRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/jars', jarRoutes);
+app.use('/api/jar-actual-balances', jarActualBalanceRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/monthly-incomes', monthlyIncomeRoutes);
 app.use('/api/jar-allocations', jarAllocationRoutes);

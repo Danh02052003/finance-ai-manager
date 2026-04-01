@@ -1,4 +1,5 @@
 import { Transaction } from '../models/index.js';
+import { TRANSACTION_CATEGORIES, TRANSACTION_DIRECTIONS } from '../models/constants.js';
 import {
   parseOptionalString,
   requireDate,
@@ -10,8 +11,35 @@ import {
   resolveJarByKey
 } from './mvpDataService.js';
 
+const normalizeTransactionAmount = (value) => {
+  const parsedValue = requireNumber(value, 'amount');
+
+  // Manual form inputs use thousand-VND units for faster entry.
+  return parsedValue * 1000;
+};
+
+const normalizeDirection = (value) => {
+  const direction = parseOptionalString(value) || 'expense';
+
+  if (!TRANSACTION_DIRECTIONS.includes(direction)) {
+    throw new Error('direction is invalid.');
+  }
+
+  return direction;
+};
+
+const normalizeCategory = (value) => {
+  const category = parseOptionalString(value) || 'uncategorized';
+
+  if (!TRANSACTION_CATEGORIES.includes(category)) {
+    throw new Error('category is invalid.');
+  }
+
+  return category;
+};
+
 const buildTransactionPayload = async (userId, payload) => {
-  const jar = payload.jar_key ? await resolveJarByKey(userId, payload.jar_key) : null;
+  const jar = await resolveJarByKey(userId, payload.jar_key || 'essentials');
 
   return {
     user_id: userId,
@@ -19,9 +47,10 @@ const buildTransactionPayload = async (userId, payload) => {
     jar_key: jar?.jar_key || null,
     month: requireMonth(payload.month),
     transaction_date: requireDate(payload.transaction_date, 'transaction_date'),
-    amount: requireNumber(payload.amount, 'amount'),
+    amount: normalizeTransactionAmount(payload.amount),
     currency: payload.currency?.trim() || 'VND',
-    direction: requireString(payload.direction, 'direction'),
+    direction: normalizeDirection(payload.direction),
+    category: normalizeCategory(payload.category),
     description: requireString(payload.description, 'description'),
     source: parseOptionalString(payload.source) || 'manual',
     external_row_ref: parseOptionalString(payload.external_row_ref) || null,

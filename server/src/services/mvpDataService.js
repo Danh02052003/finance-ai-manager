@@ -40,6 +40,34 @@ export const requireNumber = (value, fieldName) => {
   return parsedValue;
 };
 
+export const requireMoneyInput = (value, fieldName) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  const rawValue = `${value ?? ''}`.trim();
+
+  if (!rawValue) {
+    throw new Error(`${fieldName} is required.`);
+  }
+
+  const sign = rawValue.startsWith('-') ? -1 : 1;
+  const unsignedValue = rawValue.replace(/^[+-]/, '').replace(/\s+/g, '');
+  const sanitizedValue = unsignedValue.replace(/[^\d,.]/g, '');
+
+  if (!sanitizedValue || !/\d/.test(sanitizedValue)) {
+    throw new Error(`${fieldName} must be a valid number.`);
+  }
+
+  const parsedDigits = Number(sanitizedValue.replace(/[,.]/g, ''));
+
+  if (Number.isNaN(parsedDigits)) {
+    throw new Error(`${fieldName} must be a valid number.`);
+  }
+
+  return sign * (/[,.]/.test(sanitizedValue) ? parsedDigits : parsedDigits * 1000);
+};
+
 export const requireString = (value, fieldName) => {
   const parsedValue = value?.trim();
 

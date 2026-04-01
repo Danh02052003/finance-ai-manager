@@ -4,8 +4,9 @@ from fastapi import FastAPI
 
 from app.config.db import mongo_manager
 from app.config.settings import get_settings
+from app.routes.assistant_ai import router as assistant_ai_router
 from app.routes.health import router as health_router
-from app.routes.insights import router as insights_router
+from app.routes.import_ai import router as import_ai_router
 
 
 @asynccontextmanager
@@ -24,5 +25,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(assistant_ai_router)
 app.include_router(health_router)
-app.include_router(insights_router)
+app.include_router(import_ai_router)

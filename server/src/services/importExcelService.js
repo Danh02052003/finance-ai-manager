@@ -11,6 +11,66 @@ import {
 import { ensureDemoData } from './demoSeedService.js';
 import { parseWorkbookForImport } from '../utils/excel/importWorkbook.js';
 
+const getAiServiceBaseUrl = () => process.env.AI_SERVICE_BASE_URL || 'http://localhost:8000';
+
+const classifyImportedTransactions = async (transactions) => {
+  if (!transactions.length) {
+    return {
+      provider: '',
+      transactions,
+      warnings: []
+    };
+  }
+
+  const aiItems = transactions.map((transaction, index) => ({
+    id: `t${index + 1}`,
+    description: transaction.description,
+    jar_key: transaction.jar_key,
+    amount: transaction.amount,
+    month: transaction.month,
+    notes: transaction.notes
+  }));
+
+  try {
+    const response = await fetch(`${getAiServiceBaseUrl()}/import-ai/classify-transactions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        items: aiItems
+      })
+    });
+
+    if (!response.ok) {
+      let errorMessage = `AI service returned ${response.status}.`;
+
+      try {
+        const errorPayload = await response.json();
+        errorMessage = errorPayload.detail || errorPayload.message || errorMessage;
+      } catch {
+        // Keep fallback message when response body is not JSON.
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    const payload = await response.json();
+    const categoryMap = new Map((payload.items || []).map((item) => [item.id, item.category || 'uncategorized']));
+
+    return {
+      provider: payload.provider || '',
+      transactions: transactions.map((transaction, index) => ({
+        ...transaction,
+        category: categoryMap.get(`t${index + 1}`) || 'uncategorized'
+      })),
+      warnings: []
+    };
+  } catch (error) {
+    throw new Error(error.message || 'OpenAI classification failed during import.');
+  }
+};
+
 const buildImportSummary = (fileName, normalizedData) => ({
   success: true,
   fileName,
@@ -52,6 +112,51 @@ export const resetImportedData = async () => {
   };
 };
 
+export const reclassifyImportedTransactions = async () => {
+  const user = await ensureDemoData();
+  const transactions = await Transaction.find({
+    user_id: user._id,
+    direction: 'expense'
+  })
+    .sort({ transaction_date: -1, created_at: -1 })
+    .lean();
+
+  if (!transactions.length) {
+    return {
+      success: true,
+      message: 'No transactions found for AI reclassification.',
+      provider: null,
+      updated: 0
+    };
+  }
+
+  const preparedTransactions = transactions.map((transaction) => ({
+    ...transaction,
+    external_row_ref: transaction.external_row_ref || String(transaction._id)
+  }));
+  const classificationResult = await classifyImportedTransactions(preparedTransactions);
+
+  await Promise.all(
+    classificationResult.transactions.map((transaction) =>
+      Transaction.updateOne(
+        { _id: transaction._id, user_id: user._id },
+        {
+          $set: {
+            category: transaction.category || 'uncategorized'
+          }
+        }
+      )
+    )
+  );
+
+  return {
+    success: true,
+    message: 'Transactions were reclassified by AI successfully.',
+    provider: classificationResult.provider || null,
+    updated: classificationResult.transactions.length
+  };
+};
+
 export const importExcelWorkbook = async (file) => {
   if (!file) {
     throw new Error('Excel file is required.');
@@ -59,6 +164,9 @@ export const importExcelWorkbook = async (file) => {
 
   const normalizedData = parseWorkbookForImport(file.path);
   const importSummary = buildImportSummary(file.originalname, normalizedData);
+  const classificationResult = await classifyImportedTransactions(normalizedData.transactions);
+  normalizedData.transactions = classificationResult.transactions;
+  importSummary.warnings.push(...classificationResult.warnings);
   const user = await ensureDemoData();
   const jars = await Jar.find({ user_id: user._id }).lean();
   const jarMap = new Map(jars.map((jar) => [jar.jar_key, jar]));
@@ -159,7 +267,8 @@ export const importExcelWorkbook = async (file) => {
         transaction_date: transactionItem.transaction_date,
         amount: transactionItem.amount,
         currency: 'VND',
-        direction: 'expense',
+        direction: transactionItem.direction || 'expense',
+        category: transactionItem.category || 'uncategorized',
         description: transactionItem.description,
         source: 'excel_import',
         external_row_ref: transactionItem.external_row_ref,

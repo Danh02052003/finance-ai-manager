@@ -31,3 +31,17 @@ export const clearImportedWorkbookData = async () => {
 
   return payload;
 };
+
+export const reclassifyTransactionsByAi = async () => {
+  const response = await fetch(`${API_BASE_URL}/import/reclassify-transactions`, {
+    method: 'POST'
+  });
+
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.errors?.[0] || payload.message || payload.detail || 'AI reclassification failed.');
+  }
+
+  return payload;
+};

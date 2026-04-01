@@ -1,8 +1,23 @@
+@import "tailwindcss";
+
 :root {
   color-scheme: dark;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b1020;
-  color: #e5e7eb;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0f0f23;
+  color: #f8fafc;
+  --bg-primary: #0f0f23;
+  --bg-secondary: #1a1a2e;
+  --bg-accent: #16213e;
+  --surface-strong: rgba(26, 26, 46, 0.88);
+  --surface-soft: rgba(20, 26, 46, 0.72);
+  --border-soft: rgba(148, 163, 184, 0.14);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --hero-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 * {
@@ -13,9 +28,11 @@ body {
   margin: 0;
   min-width: 320px;
   background:
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 28%),
-    linear-gradient(180deg, #0b1020 0%, #111827 100%);
-  color: #e5e7eb;
+    radial-gradient(circle at top, rgba(102, 126, 234, 0.22), transparent 28%),
+    radial-gradient(circle at right, rgba(16, 185, 129, 0.12), transparent 22%),
+    linear-gradient(180deg, #0f0f23 0%, #12162f 55%, #0d1227 100%);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 a {
@@ -28,6 +45,18 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+select,
+input[type="date"],
+input[type="month"] {
+  color-scheme: dark;
+}
+
+option,
+optgroup {
+  color: #0f172a;
+  background-color: #ffffff;
 }
 
 #root {
@@ -207,6 +236,11 @@ table {
   color: #cbd5e1;
 }
 
+.field-hint {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
 .field-group input,
 .field-group select,
 .field-group textarea {
@@ -242,6 +276,13 @@ table {
   padding: 10px 14px;
 }
 
+.primary-button:disabled,
+.secondary-button:disabled,
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .primary-button {
   background: #2563eb;
   color: #fff;
@@ -268,6 +309,7 @@ td {
   padding: 14px 12px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.12);
   text-align: left;
+  vertical-align: top;
 }
 
 th {

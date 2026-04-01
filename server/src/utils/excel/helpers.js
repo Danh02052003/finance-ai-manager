@@ -2,20 +2,28 @@ import XLSX from 'xlsx';
 
 const JAR_LABEL_MAP = new Map([
   ['huchitieucanthiet', 'essentials'],
+  ['hucanthiet', 'essentials'],
   ['chitieucanthiet', 'essentials'],
+  ['quycanthiet', 'essentials'],
+  ['quychitieucanthiet', 'essentials'],
   ['essentials', 'essentials'],
   ['tietkiemdaihan', 'long_term_saving'],
+  ['quytietkiemdaihan', 'long_term_saving'],
   ['longtermsaving', 'long_term_saving'],
   ['quygiaoduc', 'education'],
   ['giaoduc', 'education'],
   ['education', 'education'],
+  ['quyhuongthu', 'enjoyment'],
   ['huongthu', 'enjoyment'],
   ['enjoyment', 'enjoyment'],
   ['quytudotaichinh', 'financial_freedom'],
   ['taichinhtudo', 'financial_freedom'],
+  ['quydautu', 'financial_freedom'],
+  ['quydaututaichinh', 'financial_freedom'],
   ['financialfreedom', 'financial_freedom'],
   ['quytuthientaichinh', 'financial_freedom'],
   ['quytuthien', 'charity'],
+  ['hututhien', 'charity'],
   ['charity', 'charity']
 ]);
 
@@ -112,6 +120,55 @@ export const parseAmount = (value) => {
 
   const parsedValue = Number(digitsOnly);
   return Number.isNaN(parsedValue) ? null : parsedValue;
+};
+
+export const normalizeImportedVndAmount = (value) => {
+  if (value == null || value === 0) {
+    return value;
+  }
+
+  // Many legacy Excel sheets store VND in "nghin dong" units.
+  if (Math.abs(value) < 1000) {
+    return value * 1000;
+  }
+
+  return value;
+};
+
+const hasExplicitThousandsSeparator = (rawValue) =>
+  /^-?\d{1,3}(?:[,.]\d{3})+$/.test(rawValue) || /^-?\d{1,3}(?: \d{3})+$/.test(rawValue);
+
+export const parseImportedMoneyValue = (value) => {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  if (typeof value === 'string' && value.includes('+')) {
+    const parts = value
+      .split('+')
+      .map((item) => parseImportedMoneyValue(item))
+      .filter((item) => item != null);
+
+    return parts.length ? parts.reduce((total, item) => total + item, 0) : null;
+  }
+
+  const parsedValue = parseAmount(value);
+
+  if (parsedValue == null) {
+    return null;
+  }
+
+  if (parsedValue === 0) {
+    return 0;
+  }
+
+  const rawValue = String(value).trim();
+
+  if (hasExplicitThousandsSeparator(rawValue)) {
+    return parsedValue;
+  }
+
+  return parsedValue * 1000;
 };
 
 export const parseSheetMonth = (sheetName, fallbackYear = new Date().getFullYear()) => {
@@ -244,6 +301,9 @@ export const findHeaderRow = (rows, predicate) => {
 };
 
 export const isRowEmpty = (row) => row.every((cell) => String(cell ?? '').trim() === '');
+
+export const getNonEmptyCellTexts = (row) =>
+  row.map((cell) => String(cell ?? '').trim()).filter(Boolean);
 
 export const inferJarKey = (value) => {
   const normalizedValue = normalizeText(value);

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import Layout from './components/Layout.jsx';
+import ActualBalancesPage from './pages/ActualBalancesPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import DebtsPage from './pages/DebtsPage.jsx';
 import ImportExcel from './pages/ImportExcel.jsx';
@@ -14,6 +15,7 @@ const App = () => (
     <Route element={<Layout />}>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/actual-balances" element={<ActualBalancesPage />} />
       <Route path="/import" element={<ImportExcel />} />
       <Route path="/monthly-plan" element={<MonthlyPlanPage />} />
       <Route path="/transactions" element={<TransactionsPage />} />

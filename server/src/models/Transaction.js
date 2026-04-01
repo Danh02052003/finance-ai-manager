@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-import { JAR_KEYS, MONTH_PATTERN, TRANSACTION_DIRECTIONS } from './constants.js';
+import { JAR_KEYS, MONTH_PATTERN, TRANSACTION_CATEGORIES, TRANSACTION_DIRECTIONS } from './constants.js';
 
 const { Schema } = mongoose;
 
@@ -42,6 +42,11 @@ const transactionSchema = new Schema(
       type: String,
       required: true,
       enum: TRANSACTION_DIRECTIONS
+    },
+    category: {
+      type: String,
+      enum: TRANSACTION_CATEGORIES,
+      default: 'uncategorized'
     },
     description: {
       type: String,
