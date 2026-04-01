@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import {
   AIAdviceLog,
   Jar,
+  JarActualBalance,
   JarAllocation,
   JarDebt,
   MonthlyIncome,
@@ -89,10 +90,11 @@ const buildImportSummary = (fileName, normalizedData) => ({
 export const resetImportedData = async () => {
   const user = await ensureDemoData();
 
-  const [monthlyIncomes, jarAllocations, transactions, jarDebts, aiAdviceLogs] =
+  const [monthlyIncomes, jarAllocations, jarActualBalances, transactions, jarDebts, aiAdviceLogs] =
     await Promise.all([
       MonthlyIncome.deleteMany({ user_id: user._id }),
       JarAllocation.deleteMany({ user_id: user._id }),
+      JarActualBalance.deleteMany({ user_id: user._id }),
       Transaction.deleteMany({ user_id: user._id }),
       JarDebt.deleteMany({ user_id: user._id }),
       AIAdviceLog.deleteMany({ user_id: user._id })
@@ -104,6 +106,7 @@ export const resetImportedData = async () => {
     deleted: {
       monthly_incomes: monthlyIncomes.deletedCount,
       jar_allocations: jarAllocations.deletedCount,
+      jar_actual_balances: jarActualBalances.deletedCount,
       transactions: transactions.deletedCount,
       jar_debts: jarDebts.deletedCount,
       ai_advice_logs: aiAdviceLogs.deletedCount

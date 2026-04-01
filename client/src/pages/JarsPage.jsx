@@ -191,6 +191,14 @@ const JarsPage = () => {
     accumulator[item.jar_key] = (accumulator[item.jar_key] || 0) + (item.amount || 0);
     return accumulator;
   }, {});
+  const positiveAdjustmentsByJar = selectedMonthTransactions.reduce((accumulator, item) => {
+    if (!item.jar_key || item.direction !== 'income_adjustment') {
+      return accumulator;
+    }
+
+    accumulator[item.jar_key] = (accumulator[item.jar_key] || 0) + (item.amount || 0);
+    return accumulator;
+  }, {});
   const totalAllocation = (dashboardData?.latest_jar_allocations || []).reduce(
     (sum, item) => sum + (item.allocated_amount || 0),
     0
@@ -201,6 +209,11 @@ const JarsPage = () => {
   );
   const selectedMonthSpentTotal = selectedMonthTransactions.reduce(
     (sum, item) => sum + (item.direction === 'expense' ? item.amount || 0 : 0),
+    0
+  );
+  const selectedMonthNetYieldTotal = selectedMonthTransactions.reduce(
+    (sum, item) =>
+      sum + (item.direction === 'income_adjustment' && item.source === 'momo_yield' ? item.amount || 0 : 0),
     0
   );
   const activeCount = jars.filter((jar) => jar.is_active).length;
@@ -239,7 +252,11 @@ const JarsPage = () => {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+      <section
+        id="jars-overview"
+        data-assistant-target="jars-overview"
+        className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"
+      >
         <article className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.24)_0%,rgba(118,75,162,0.22)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-100/80">
             Visual jars
@@ -341,7 +358,11 @@ const JarsPage = () => {
         </article>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section
+        id="jars-summary"
+        data-assistant-target="jars-summary"
+        className="grid gap-4 md:grid-cols-5"
+      >
         <article className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
             Thu nhập tháng
@@ -365,6 +386,15 @@ const JarsPage = () => {
           <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(selectedMonthSpentTotal)}</p>
           <p className="mt-2 text-sm text-slate-400">Tổng chi phát sinh trong tháng đang xem</p>
         </article>
+        <article className="rounded-[28px] border border-emerald-400/20 bg-emerald-400/10 p-5 shadow-lg shadow-slate-950/20">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-100/80">
+            Lãi ròng tháng này
+          </p>
+          <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(selectedMonthNetYieldTotal)}</p>
+          <p className="mt-2 text-sm text-emerald-100/80">
+            Tổng các giao dịch lợi nhuận MoMo của tháng đang xem.
+          </p>
+        </article>
         <article className="rounded-[28px] border border-sky-400/20 bg-sky-400/10 p-5 shadow-lg shadow-slate-950/20">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-100/80">
             Giữ riêng từ tháng trước
@@ -386,7 +416,11 @@ const JarsPage = () => {
         </div>
       ) : null}
 
-      <section className="rounded-[28px] border border-sky-400/20 bg-sky-400/10 p-5 text-sm text-sky-100 shadow-lg shadow-slate-950/20">
+      <section
+        id="jars-separation-note"
+        data-assistant-target="jars-separation-note"
+        className="rounded-[28px] border border-sky-400/20 bg-sky-400/10 p-5 text-sm text-sky-100 shadow-lg shadow-slate-950/20"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-100/80">
           Tách riêng để tránh ảo giác còn nhiều tiền
         </p>
@@ -397,24 +431,30 @@ const JarsPage = () => {
         </p>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-2">
+      <section
+        id="jars-cards"
+        data-assistant-target="jars-cards"
+        className="grid gap-4 xl:grid-cols-2"
+      >
         {jars.map((jar) => {
           const allocation = allocationMap.get(jar.jar_key);
           const monthlyAllocation = allocationByJar.get(jar.jar_key)?.allocated_amount || 0;
           const spentAmount = spentByJar[jar.jar_key] || 0;
-          const remainingAmount = monthlyAllocation - spentAmount;
+          const positiveAdjustments = positiveAdjustmentsByJar[jar.jar_key] || 0;
+          const effectiveAvailableAmount = monthlyAllocation + positiveAdjustments;
+          const remainingAmount = effectiveAvailableAmount - spentAmount;
           const suggestedDailyBudget =
             monthMetrics && monthMetrics.daysRemaining > 0
               ? Math.max(0, Math.floor(remainingAmount / monthMetrics.daysRemaining))
               : 0;
           const expectedSpendToDate =
             monthMetrics && monthMetrics.daysInMonth > 0
-              ? Math.round((monthlyAllocation * monthMetrics.daysElapsed) / monthMetrics.daysInMonth)
+              ? Math.round((effectiveAvailableAmount * monthMetrics.daysElapsed) / monthMetrics.daysInMonth)
               : 0;
           const overspendAmount = Math.max(0, spentAmount - expectedSpendToDate);
           const baseDailyRate =
             monthMetrics && monthMetrics.daysInMonth > 0
-              ? Math.max(1, Math.floor(monthlyAllocation / monthMetrics.daysInMonth))
+              ? Math.max(1, Math.floor(Math.max(effectiveAvailableAmount, 0) / monthMetrics.daysInMonth))
               : 0;
           const overspendDays =
             overspendAmount > 0 && baseDailyRate > 0
@@ -455,7 +495,11 @@ const JarsPage = () => {
               }
               deltaLabel={
                 allocationByJar.get(jar.jar_key)
-                  ? `Phân bổ tháng ${selectedMonthLabel}`
+                  ? positiveAdjustments > 0
+                    ? `Phân bổ ${formatCurrency(monthlyAllocation)} + điều chỉnh ${formatCurrency(
+                        positiveAdjustments
+                      )}`
+                    : `Phân bổ tháng ${selectedMonthLabel}`
                   : 'Chưa có phân bổ cho tháng này'
               }
               onSecondaryAction={handleSpendFromJar}

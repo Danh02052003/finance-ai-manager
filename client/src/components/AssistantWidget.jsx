@@ -1,24 +1,27 @@
 import {
   ChatBubbleOvalLeftEllipsisIcon,
+  MapIcon,
   PaperAirplaneIcon,
   SparklesIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { chatWithAssistant } from '../api/assistantApi.js';
 import { getPageMeta } from '../config/navigation.js';
 
-const createMessage = (role, content, provider = '') => ({
+const createMessage = (role, content, provider = '', navigation = null) => ({
   id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   role,
   content,
-  provider
+  provider,
+  navigation
 });
 
 const AssistantWidget = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const pageMeta = useMemo(() => getPageMeta(location.pathname), [location.pathname]);
   const [isOpen, setIsOpen] = useState(false);
@@ -31,6 +34,7 @@ const AssistantWidget = () => {
     )
   ]);
   const scrollAreaRef = useRef(null);
+  const pendingNavigationRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,6 +47,75 @@ const AssistantWidget = () => {
       scrollArea.scrollTop = scrollArea.scrollHeight;
     }
   }, [isOpen, isLoading, messages]);
+
+  const scrollToAssistantTarget = (targetId) => {
+    if (!targetId) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    let attempts = 0;
+    const maxAttempts = 16;
+
+    const tryScroll = () => {
+      const targetElement = document.querySelector(`[data-assistant-target="${targetId}"]`);
+
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      attempts += 1;
+
+      if (attempts < maxAttempts) {
+        window.setTimeout(tryScroll, 180);
+      }
+    };
+
+    tryScroll();
+  };
+
+  useEffect(() => {
+    if (!pendingNavigationRef.current) {
+      return;
+    }
+
+    const { path, targetId } = pendingNavigationRef.current;
+
+    if (location.pathname === path) {
+      scrollToAssistantTarget(targetId);
+      pendingNavigationRef.current = null;
+    }
+  }, [location.pathname, location.search]);
+
+  const applyNavigation = (navigationInstruction) => {
+    if (!navigationInstruction || !navigationInstruction.path) {
+      return;
+    }
+
+    const query = new URLSearchParams(navigationInstruction.query || {});
+
+    if (navigationInstruction.path === '/transactions' && navigationInstruction.target_id === 'transactions-editor' && !query.has('quickAdd')) {
+      query.set('quickAdd', '1');
+    }
+
+    const nextUrl = `${navigationInstruction.path}${query.toString() ? `?${query.toString()}` : ''}`;
+    const nextPath = navigationInstruction.path;
+    const currentUrl = `${location.pathname}${location.search}`;
+
+    pendingNavigationRef.current = {
+      path: nextPath,
+      targetId: navigationInstruction.target_id || ''
+    };
+
+    if (currentUrl === nextUrl) {
+      scrollToAssistantTarget(navigationInstruction.target_id || '');
+      pendingNavigationRef.current = null;
+      return;
+    }
+
+    navigate(nextUrl);
+  };
 
   const sendMessage = async (rawValue) => {
     const nextMessage = rawValue.trim();
@@ -64,8 +137,14 @@ const AssistantWidget = () => {
 
       setMessages((currentMessages) => [
         ...currentMessages,
-        createMessage('assistant', response.message, response.provider || '')
+        createMessage(
+          'assistant',
+          response.message,
+          response.provider || '',
+          response.navigation || null
+        )
       ]);
+      applyNavigation(response.navigation);
     } catch (error) {
       setMessages((currentMessages) => [
         ...currentMessages,
@@ -130,6 +209,16 @@ const AssistantWidget = () => {
                       <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
                         Provider: {message.provider}
                       </div>
+                    ) : null}
+                    {message.role === 'assistant' && message.navigation?.path ? (
+                      <button
+                        type="button"
+                        onClick={() => applyNavigation(message.navigation)}
+                        className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-200 transition hover:bg-white/10"
+                      >
+                        <MapIcon className="h-3.5 w-3.5" />
+                        Mở đúng chỗ này
+                      </button>
                     ) : null}
                   </div>
                 </div>

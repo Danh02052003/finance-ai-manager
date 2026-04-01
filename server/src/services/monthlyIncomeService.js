@@ -4,14 +4,14 @@ import {
   requireDate,
   requireDemoUser,
   requireMonth,
-  requireNumber,
+  requireMoneyInput,
   requireObjectId
 } from './mvpDataService.js';
 
 const buildMonthlyIncomePayload = (userId, payload) => ({
   user_id: userId,
   month: requireMonth(payload.month),
-  total_amount: requireNumber(payload.total_amount, 'total_amount'),
+  total_amount: requireMoneyInput(payload.total_amount, 'total_amount'),
   currency: payload.currency?.trim() || 'VND',
   income_date: payload.income_date
     ? requireDate(payload.income_date, 'income_date')

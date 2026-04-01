@@ -18,7 +18,7 @@ const MobileBottomNav = () => (
               [
                 'flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition',
                 isActive
-                  ? 'bg-white/95 text-slate-950 shadow-lg shadow-indigo-500/20'
+                  ? 'bg-[linear-gradient(135deg,rgba(99,102,241,0.92)_0%,rgba(79,70,229,0.92)_100%)] text-white shadow-lg shadow-indigo-900/40'
                   : 'text-slate-400 hover:bg-white/5 hover:text-white'
               ].join(' ')
             }

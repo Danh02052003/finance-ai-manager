@@ -43,7 +43,7 @@ const Sidebar = ({ isOpen, onClose }) => (
                 [
                   'group flex items-center gap-3 rounded-2xl border px-4 py-3 transition',
                   isActive
-                    ? 'border-indigo-300/35 bg-white/95 text-slate-950 shadow-lg shadow-indigo-900/20'
+                    ? 'border-indigo-400/40 bg-[linear-gradient(135deg,rgba(99,102,241,0.18)_0%,rgba(79,70,229,0.14)_100%)] text-white shadow-lg shadow-indigo-950/30'
                     : 'border-transparent bg-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white'
                 ].join(' ')
               }
@@ -53,7 +53,7 @@ const Sidebar = ({ isOpen, onClose }) => (
                   <span
                     className={[
                       'inline-flex h-10 w-10 items-center justify-center rounded-2xl transition',
-                      isActive ? 'bg-slate-950 text-white' : 'bg-white/5 text-slate-300'
+                      isActive ? 'bg-white/10 text-white' : 'bg-white/5 text-slate-300'
                     ].join(' ')}
                   >
                     <Icon className="h-5 w-5" />
@@ -63,7 +63,7 @@ const Sidebar = ({ isOpen, onClose }) => (
                     <span
                       className={[
                         'block truncate text-xs',
-                        isActive ? 'text-slate-700' : 'text-slate-500 group-hover:text-slate-400'
+                        isActive ? 'text-indigo-100/85' : 'text-slate-500 group-hover:text-slate-400'
                       ].join(' ')}
                     >
                       {item.title}
@@ -76,14 +76,6 @@ const Sidebar = ({ isOpen, onClose }) => (
         })}
       </nav>
 
-      <div className="mt-6 rounded-3xl border border-white/10 bg-(--hero-gradient) p-4 text-white shadow-lg shadow-indigo-950/30">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
-          Quick reminder
-        </p>
-        <p className="mt-2 text-sm leading-6 text-white/90">
-          Ưu tiên ghi giao dịch ngay khi phát sinh để dashboard luôn đúng nhịp.
-        </p>
-      </div>
     </aside>
   </>
 );

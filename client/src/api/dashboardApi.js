@@ -79,6 +79,12 @@ export const updateJarActualBalance = (jarActualBalanceId, payload) =>
     body: JSON.stringify(payload)
   });
 
+export const runDailyYield = (payload = {}) =>
+  apiRequest('/jar-actual-balances/run-daily-yield', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+
 export const deleteJarActualBalance = (jarActualBalanceId) =>
   apiRequest(`/jar-actual-balances/${jarActualBalanceId}`, {
     method: 'DELETE'

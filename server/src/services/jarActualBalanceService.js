@@ -1,24 +1,47 @@
 import { JarActualBalance } from '../models/index.js';
 import {
   parseOptionalString,
+  parseOptionalDate,
   requireDemoUser,
   requireMoneyInput,
   requireMonth,
+  requireNumber,
   requireObjectId,
   resolveJarByKey
 } from './mvpDataService.js';
+import { createYieldDates, runDailyYield } from './yieldService.js';
 
-const buildJarActualBalancePayload = async (userId, payload) => {
+const buildJarActualBalancePayload = async (userId, payload, existingRecord = null) => {
   const month = requireMonth(payload.month);
   const jar = await resolveJarByKey(userId, payload.jar_key);
+  const activationDate =
+    parseOptionalDate(payload.yield_activation_date, 'yield_activation_date') ||
+    existingRecord?.yield_activation_date ||
+    null;
+  const yieldDates = createYieldDates(activationDate);
 
   return {
     user_id: userId,
     jar_id: jar._id,
     jar_key: jar.jar_key,
     month,
-    actual_balance_amount: requireMoneyInput(payload.actual_balance_amount, 'actual_balance_amount'),
-    note: parseOptionalString(payload.note) || null
+    actual_balance_amount: requireMoneyInput(
+      payload.actual_balance_amount ?? existingRecord?.actual_balance_amount ?? 0,
+      'actual_balance_amount'
+    ),
+    yield_enabled:
+      payload.yield_enabled == null ? existingRecord?.yield_enabled ?? true : Boolean(payload.yield_enabled),
+    yield_activation_date: yieldDates.yield_activation_date,
+    yield_start_date: yieldDates.yield_start_date,
+    yield_rate_annual:
+      payload.yield_rate_annual == null
+        ? Number(existingRecord?.yield_rate_annual || 0)
+        : requireNumber(payload.yield_rate_annual, 'yield_rate_annual'),
+    last_yield_processed_at: existingRecord?.last_yield_processed_at || null,
+    gross_yield_amount: Number(existingRecord?.gross_yield_amount || 0),
+    withholding_tax_amount: Number(existingRecord?.withholding_tax_amount || 0),
+    net_yield_amount: Number(existingRecord?.net_yield_amount || 0),
+    note: parseOptionalString(payload.note) || existingRecord?.note || null
   };
 };
 
@@ -36,7 +59,7 @@ export const listJarActualBalances = async () => {
 
 export const createJarActualBalance = async (payload) => {
   const user = await requireDemoUser();
-  const jarActualBalancePayload = await buildJarActualBalancePayload(user._id, payload);
+  const jarActualBalancePayload = await buildJarActualBalancePayload(user._id, payload, null);
 
   const existingJarActualBalance = await JarActualBalance.findOne({
     user_id: user._id,
@@ -69,7 +92,11 @@ export const updateJarActualBalance = async (jarActualBalanceId, payload) => {
     throw new Error('Jar actual balance not found.');
   }
 
-  const jarActualBalancePayload = await buildJarActualBalancePayload(user._id, payload);
+  const jarActualBalancePayload = await buildJarActualBalancePayload(
+    user._id,
+    payload,
+    existingJarActualBalance
+  );
   const conflictingJarActualBalance = await JarActualBalance.findOne({
     _id: { $ne: jarActualBalanceId },
     user_id: user._id,
@@ -119,3 +146,5 @@ export const deleteJarActualBalance = async (jarActualBalanceId) => {
     }
   };
 };
+
+export const triggerDailyYield = async (payload) => runDailyYield(payload || {});

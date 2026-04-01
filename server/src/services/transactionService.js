@@ -10,6 +10,7 @@ import {
   requireString,
   resolveJarByKey
 } from './mvpDataService.js';
+import { applyTransactionImpactToActualBalance } from './yieldService.js';
 
 const normalizeTransactionAmount = (value) => {
   const parsedValue = requireNumber(value, 'amount');
@@ -74,6 +75,7 @@ export const createTransaction = async (payload) => {
   const user = await requireDemoUser();
   const transactionPayload = await buildTransactionPayload(user._id, payload);
   const transaction = await Transaction.create(transactionPayload);
+  await applyTransactionImpactToActualBalance(user._id, transactionPayload, 1);
 
   return {
     message: 'Transaction created successfully.',
@@ -108,6 +110,9 @@ export const updateTransaction = async (transactionId, payload) => {
     }
   ).lean();
 
+  await applyTransactionImpactToActualBalance(user._id, existingTransaction, -1);
+  await applyTransactionImpactToActualBalance(user._id, transactionPayload, 1);
+
   return {
     message: 'Transaction updated successfully.',
     data: transaction
@@ -126,6 +131,8 @@ export const deleteTransaction = async (transactionId) => {
   if (!transaction) {
     throw new Error('Transaction not found.');
   }
+
+  await applyTransactionImpactToActualBalance(user._id, transaction, -1);
 
   return {
     message: 'Transaction deleted successfully.',

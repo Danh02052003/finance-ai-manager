@@ -16,6 +16,21 @@ import {
 import JarAllocationTable from '../components/JarAllocationTable.jsx';
 import MonthlyIncomeTable from '../components/MonthlyIncomeTable.jsx';
 import { formatCurrency, formatDate } from '../components/formatters.js';
+import {
+  formatMoneyInputValue,
+  getCurrentMonthValue,
+  moneyInputHint,
+  parseMoneyInputPreview
+} from '../utils/moneyInput.js';
+
+const getTodayDateString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
 
 const CLASSIC_JAR_RATIOS = {
   essentials: 55,
@@ -27,9 +42,9 @@ const CLASSIC_JAR_RATIOS = {
 };
 
 const defaultIncomeForm = {
-  month: '',
+  month: getCurrentMonthValue(),
   total_amount: '',
-  income_date: '',
+  income_date: getTodayDateString(),
   source_note: '',
   allocation_mode: 'split_classic',
   target_jar_key: 'essentials'
@@ -105,12 +120,14 @@ const MonthlyPlanPage = () => {
   const completionRate = focusedIncomeTotal
     ? Math.min(100, Math.max(0, Math.round((allocatedTotal / focusedIncomeTotal) * 100)))
     : 0;
+  const incomeAmountPreview = parseMoneyInputPreview(incomeForm.total_amount);
 
   const handleIncomeChange = (event) => {
     const { name, value } = event.target;
     setIncomeForm((currentForm) => ({
       ...currentForm,
-      [name]: value
+      [name]: value,
+      ...(name === 'income_date' && value ? { month: value.slice(0, 7) } : {})
     }));
   };
 
@@ -185,18 +202,19 @@ const MonthlyPlanPage = () => {
 
     try {
       const normalizedIncomePayload = {
-        month: incomeForm.month,
+        month: incomeForm.income_date?.slice(0, 7) || incomeForm.month,
         total_amount: incomeForm.total_amount,
         income_date: incomeForm.income_date,
         source_note: incomeForm.source_note
       };
 
       if (editingIncomeId) {
-        await updateMonthlyIncome(editingIncomeId, normalizedIncomePayload);
+        const response = await updateMonthlyIncome(editingIncomeId, normalizedIncomePayload);
+        const savedIncome = response?.data;
         await syncAutoAllocations(
           editingIncomeId,
-          incomeForm.total_amount,
-          incomeForm.month,
+          savedIncome?.total_amount || incomeAmountPreview || 0,
+          savedIncome?.month || normalizedIncomePayload.month,
           incomeForm.allocation_mode,
           incomeForm.target_jar_key
         );
@@ -208,8 +226,8 @@ const MonthlyPlanPage = () => {
         if (createdIncome?._id) {
           await syncAutoAllocations(
             createdIncome._id,
-            incomeForm.total_amount,
-            incomeForm.month,
+            createdIncome.total_amount || incomeAmountPreview || 0,
+            createdIncome.month || normalizedIncomePayload.month,
             incomeForm.allocation_mode,
             incomeForm.target_jar_key
           );
@@ -263,8 +281,8 @@ const MonthlyPlanPage = () => {
     setEditingIncomeId(monthlyIncome._id);
     setIncomeForm({
       month: monthlyIncome.month || '',
-      total_amount: monthlyIncome.total_amount?.toString() || '',
-      income_date: monthlyIncome.income_date?.slice(0, 10) || '',
+      total_amount: formatMoneyInputValue(monthlyIncome.total_amount),
+      income_date: monthlyIncome.income_date?.slice(0, 10) || `${monthlyIncome.month}-01`,
       source_note: monthlyIncome.source_note || '',
       allocation_mode: singleAllocation ? 'single_jar' : 'split_classic',
       target_jar_key: singleAllocation?.jar_key || 'essentials'
@@ -327,6 +345,8 @@ const MonthlyPlanPage = () => {
   return (
     <div className="space-y-6">
       <motion.section
+        id="monthly-plan-overview"
+        data-assistant-target="monthly-plan-overview"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.24)_0%,rgba(118,75,162,0.18)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20"
@@ -406,6 +426,8 @@ const MonthlyPlanPage = () => {
 
       <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
         <article
+          id="monthly-plan-income-form"
+          data-assistant-target="monthly-plan-income-form"
           ref={incomeFormRef}
           className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
         >
@@ -420,34 +442,20 @@ const MonthlyPlanPage = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  Tháng
-                </span>
-                <input
-                  aria-label="Tháng thu nhập"
-                  name="month"
-                  type="month"
-                  value={incomeForm.month}
-                  onChange={handleIncomeChange}
-                  required
-                  className="w-full bg-transparent text-sm text-white outline-none"
-                />
-              </label>
-
-              <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                   Tổng thu nhập
                 </span>
                 <input
                   name="total_amount"
-                  type="number"
+                  type="text"
                   value={incomeForm.total_amount}
                   onChange={handleIncomeChange}
                   required
                   className="w-full bg-transparent text-sm text-white outline-none"
                 />
+                <p className="mt-2 text-xs text-slate-500">{moneyInputHint}</p>
               </label>
 
-              <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3 sm:col-span-2">
+              <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                   Ngày nhận
                 </span>
@@ -456,9 +464,29 @@ const MonthlyPlanPage = () => {
                   name="income_date"
                   value={incomeForm.income_date}
                   onChange={handleIncomeChange}
+                  onFocus={(event) => event.target.showPicker?.()}
+                  onClick={(event) => event.target.showPicker?.()}
+                  required
                   className="w-full bg-transparent text-sm text-white outline-none"
                 />
               </label>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Tháng sẽ lưu
+                </p>
+                <p className="mt-2 font-semibold text-white">{incomeForm.income_date?.slice(0, 7) || '--'}</p>
+              </div>
+              <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100/80">
+                  Giá trị sẽ lưu
+                </p>
+                <p className="mt-2 font-semibold text-white">
+                  {incomeAmountPreview != null ? formatCurrency(incomeAmountPreview) : '--'}
+                </p>
+              </div>
             </div>
 
             <label className="block rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
@@ -536,6 +564,8 @@ const MonthlyPlanPage = () => {
         </article>
 
         <article
+          id="monthly-plan-allocation-board"
+          data-assistant-target="monthly-plan-allocation-board"
           ref={allocationFormRef}
           className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
         >
@@ -697,7 +727,11 @@ const MonthlyPlanPage = () => {
       </section>
 
       {focusedIncome ? (
-        <section className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
+        <section
+          id="monthly-plan-focus"
+          data-assistant-target="monthly-plan-focus"
+          className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
+        >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">

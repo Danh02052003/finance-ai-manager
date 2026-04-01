@@ -30,6 +30,40 @@ const jarActualBalanceSchema = new Schema(
       type: Number,
       required: true
     },
+    yield_enabled: {
+      type: Boolean,
+      required: true,
+      default: true
+    },
+    yield_activation_date: {
+      type: Date
+    },
+    yield_start_date: {
+      type: Date
+    },
+    yield_rate_annual: {
+      type: Number,
+      required: true,
+      default: 0
+    },
+    last_yield_processed_at: {
+      type: Date
+    },
+    gross_yield_amount: {
+      type: Number,
+      required: true,
+      default: 0
+    },
+    withholding_tax_amount: {
+      type: Number,
+      required: true,
+      default: 0
+    },
+    net_yield_amount: {
+      type: Number,
+      required: true,
+      default: 0
+    },
     note: {
       type: String,
       trim: true

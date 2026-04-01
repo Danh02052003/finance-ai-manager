@@ -10,8 +10,23 @@ const categoryLabels = {
   uncategorized: 'Chưa phân loại'
 };
 
+const getAmountToneClass = (item) =>
+  item.direction === 'income_adjustment' ? 'text-emerald-300' : 'text-rose-300';
+
+const getAmountPrefix = (item) => (item.direction === 'income_adjustment' ? '+' : '-');
+
+const getSourceBadge = (item) => {
+  if (item.source === 'momo_yield') {
+    return 'Lãi MoMo';
+  }
+
+  return '';
+};
+
 const TransactionTable = ({
   items,
+  eyebrow = 'Danh sách giao dịch',
+  title = 'Giao dịch gần nhất',
   jarNameByKey = {},
   selectedIds = [],
   onToggleSelection,
@@ -28,9 +43,9 @@ const TransactionTable = ({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-            Danh sách giao dịch
+            {eyebrow}
           </p>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Giao dịch gần nhất</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-white">{title}</h3>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -70,8 +85,9 @@ const TransactionTable = ({
                   />
                   {formatDate(item.transaction_date)}
                 </label>
-                <span className="text-right text-lg font-bold text-rose-300">
-                  -{typeof item.amount === 'number' ? formatCurrency(item.amount) : '-'}
+                <span className={`text-right text-lg font-bold ${getAmountToneClass(item)}`}>
+                  {getAmountPrefix(item)}
+                  {typeof item.amount === 'number' ? formatCurrency(item.amount) : '-'}
                 </span>
               </div>
 
@@ -84,6 +100,11 @@ const TransactionTable = ({
                 <span className="rounded-full bg-indigo-400/10 px-3 py-1 text-xs font-medium text-indigo-100">
                   {categoryLabels[item.category] || 'Chưa phân loại'}
                 </span>
+                {getSourceBadge(item) ? (
+                  <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100">
+                    {getSourceBadge(item)}
+                  </span>
+                ) : null}
               </div>
 
               <div className="mt-4 flex gap-2">
@@ -152,11 +173,19 @@ const TransactionTable = ({
                       {jarNameByKey[item.jar_key] || item.jar_key || '-'}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="rounded-full bg-indigo-400/10 px-3 py-1 text-xs font-medium text-indigo-100">
-                        {categoryLabels[item.category] || 'Chưa phân loại'}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full bg-indigo-400/10 px-3 py-1 text-xs font-medium text-indigo-100">
+                          {categoryLabels[item.category] || 'Chưa phân loại'}
+                        </span>
+                        {getSourceBadge(item) ? (
+                          <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100">
+                            {getSourceBadge(item)}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
-                    <td className="px-4 py-4 text-right font-semibold text-rose-300">
+                    <td className={`px-4 py-4 text-right font-semibold ${getAmountToneClass(item)}`}>
+                      {getAmountPrefix(item)}
                       {typeof item.amount === 'number' ? formatCurrency(item.amount) : '-'}
                     </td>
                     <td className="px-4 py-4">

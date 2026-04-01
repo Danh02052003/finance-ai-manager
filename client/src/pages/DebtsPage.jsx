@@ -114,7 +114,11 @@ const DebtsPage = () => {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(245,158,11,0.16)_0%,rgba(239,68,68,0.12)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20">
+      <section
+        id="debts-overview"
+        data-assistant-target="debts-overview"
+        className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(245,158,11,0.16)_0%,rgba(239,68,68,0.12)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Nợ giữa các hũ</p>
         <h3 className="mt-2 text-3xl font-bold tracking-tight text-white">Theo dõi hoàn trả nội bộ</h3>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
@@ -128,7 +132,7 @@ const DebtsPage = () => {
         ) : null}
       </section>
 
-      <div ref={formRef}>
+      <div ref={formRef} id="debts-form" data-assistant-target="debts-form">
         <FormSection
           label="Nhập liệu"
           title={editingId ? 'Chỉnh sửa khoản nợ' : 'Tạo khoản nợ mới'}
@@ -239,7 +243,9 @@ const DebtsPage = () => {
         </FormSection>
       </div>
 
-      <DebtTable items={debts} onEdit={handleEdit} onDelete={handleDelete} />
+      <div id="debts-table" data-assistant-target="debts-table">
+        <DebtTable items={debts} onEdit={handleEdit} onDelete={handleDelete} />
+      </div>
     </div>
   );
 };

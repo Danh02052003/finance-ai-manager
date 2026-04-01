@@ -10,7 +10,6 @@ import { useNavigate } from 'react-router-dom';
 
 import {
   getDashboard,
-  getHealth,
   getJarActualBalances,
   getJars,
   getTransactions
@@ -59,8 +58,6 @@ const statCards = [
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const [health, setHealth] = useState('Đang kiểm tra');
-  const [dashboardMessage, setDashboardMessage] = useState('Đang tải dữ liệu');
   const [dashboardData, setDashboardData] = useState(null);
   const [jars, setJars] = useState([]);
   const [actualBalances, setActualBalances] = useState([]);
@@ -70,29 +67,20 @@ const DashboardPage = () => {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const [
-          healthResponse,
-          dashboardResponse,
-          jarResponse,
-          actualBalanceResponse,
-          transactionResponse
-        ] = await Promise.all([
-          getHealth(),
+        const [dashboardResponse, jarResponse, actualBalanceResponse, transactionResponse] = await Promise.all([
           getDashboard(),
           getJars(),
           getJarActualBalances(),
           getTransactions()
         ]);
 
-        setHealth(healthResponse.status || 'ok');
-        setDashboardMessage(dashboardResponse.message || 'Sẵn sàng');
         setDashboardData(dashboardResponse.data || null);
         setJars(Array.isArray(jarResponse.data) ? jarResponse.data : []);
         setActualBalances(Array.isArray(actualBalanceResponse.data) ? actualBalanceResponse.data : []);
         setTransactions(Array.isArray(transactionResponse.data) ? transactionResponse.data : []);
         setError('');
       } catch (requestError) {
-        setError('Chưa kết nối được backend. Hãy kiểm tra server Express.');
+        setError('Không tải được dashboard. Hãy thử tải lại sau.');
       }
     };
 
@@ -127,6 +115,18 @@ const DashboardPage = () => {
       }, {}),
     [focusMonth, transactions]
   );
+  const positiveAdjustmentsByJar = useMemo(
+    () =>
+      transactions.reduce((accumulator, item) => {
+        if (!focusMonth || item.month !== focusMonth || item.direction !== 'income_adjustment' || !item.jar_key) {
+          return accumulator;
+        }
+
+        accumulator[item.jar_key] = (accumulator[item.jar_key] || 0) + (item.amount || 0);
+        return accumulator;
+      }, {}),
+    [focusMonth, transactions]
+  );
   const previousSnapshotMonth = useMemo(() => {
     if (focusMonth) {
       return getPreviousActualBalanceMonth(actualBalances, focusMonth);
@@ -144,6 +144,18 @@ const DashboardPage = () => {
   const previousActualBalanceTotal = useMemo(
     () => sumActualBalanceMonth(actualBalances, previousSnapshotMonth),
     [actualBalances, previousSnapshotMonth]
+  );
+  const focusMonthNetYieldTotal = useMemo(
+    () =>
+      transactions.reduce(
+        (sum, item) =>
+          sum +
+          (item.month === focusMonth && item.direction === 'income_adjustment' && item.source === 'momo_yield'
+            ? item.amount || 0
+            : 0),
+        0
+      ),
+    [focusMonth, transactions]
   );
   const netAmount = stats.latest_income_total - stats.recent_transaction_total;
   const insightItems = [
@@ -191,6 +203,8 @@ const DashboardPage = () => {
   return (
     <div className="space-y-6">
       <motion.section
+        id="dashboard-overview"
+        data-assistant-target="dashboard-overview"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.25)_0%,rgba(118,75,162,0.25)_45%,rgba(15,15,35,0.95)_100%)] p-6 shadow-2xl shadow-indigo-950/25"
@@ -204,8 +218,8 @@ const DashboardPage = () => {
               Nhìn nhanh sức khỏe tài chính để biết hôm nay nên hành động gì trước.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-              {dashboardMessage}. Bạn đang theo dõi {stats.active_jars}/{stats.total_jars} hũ hoạt
-              động, với trạng thái API: {health}.
+              Bạn đang theo dõi {stats.active_jars}/{stats.total_jars} hũ hoạt động. Mọi số liệu ở đây
+              tập trung vào phần thật sự hữu ích cho quyết định chi tiêu trong ngày.
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -303,7 +317,11 @@ const DashboardPage = () => {
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section
+        id="dashboard-stats"
+        data-assistant-target="dashboard-stats"
+        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+      >
         {statCards.map((item) => {
           const Icon = item.icon;
 
@@ -326,6 +344,18 @@ const DashboardPage = () => {
         })}
       </section>
 
+      <section className="grid gap-4 md:grid-cols-2">
+        <article className="rounded-[28px] border border-emerald-400/20 bg-emerald-400/10 p-5 shadow-lg shadow-slate-950/20">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-100/80">
+            Lãi ròng tháng hiện tại
+          </p>
+          <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(focusMonthNetYieldTotal)}</p>
+          <p className="mt-2 text-sm text-emerald-100/80">
+            Tổng lợi nhuận MoMo đã ghi vào tháng {focusMonth || 'hiện tại'}.
+          </p>
+        </article>
+      </section>
+
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -334,7 +364,11 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-sky-400/20 bg-sky-400/10 p-5 text-sm text-sky-100 shadow-lg shadow-slate-950/20">
+        <div
+          id="dashboard-actual-reserve"
+          data-assistant-target="dashboard-actual-reserve"
+          className="rounded-[28px] border border-sky-400/20 bg-sky-400/10 p-5 text-sm text-sky-100 shadow-lg shadow-slate-950/20"
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-100/80">
             Số dư thực giữ riêng
           </p>
@@ -352,13 +386,18 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div
+          id="dashboard-jars"
+          data-assistant-target="dashboard-jars"
+          className="grid gap-4 xl:grid-cols-3"
+        >
           {jars.slice(0, 6).map((jar) => {
             const allocation = allocationMap.get(jar.jar_key);
             const amount = allocation?.allocated_amount || 0;
             const percentage = allocation?.allocation_percentage ?? jar.target_percentage ?? 0;
             const spentAmount = spentByJar[jar.jar_key] || 0;
-            const remainingAmount = amount - spentAmount;
+            const positiveAdjustments = positiveAdjustmentsByJar[jar.jar_key] || 0;
+            const remainingAmount = amount + positiveAdjustments - spentAmount;
             const previousActualBalance = previousActualBalanceMap.get(jar.jar_key)?.actual_balance_amount;
 
             return (
@@ -371,7 +410,13 @@ const DashboardPage = () => {
                 remainingAmount={remainingAmount}
                 reserveAmount={typeof previousActualBalance === 'number' ? previousActualBalance : null}
                 reserveLabel={previousSnapshotMonth ? `Giữ riêng ${previousSnapshotMonth}` : ''}
-                deltaLabel={allocation ? `Phân bổ tháng ${allocation.month}` : 'Chưa có phân bổ gần nhất'}
+                deltaLabel={
+                  allocation
+                    ? positiveAdjustments > 0
+                      ? `Phân bổ ${formatCurrency(amount)} + điều chỉnh ${formatCurrency(positiveAdjustments)}`
+                      : `Phân bổ tháng ${allocation.month}`
+                    : 'Chưa có phân bổ gần nhất'
+                }
                 monthLabel={focusMonth || 'tháng gần nhất'}
                 onSecondaryAction={handleSpendFromJar}
                 onPrimaryAction={handleViewJarHistory}
@@ -381,8 +426,12 @@ const DashboardPage = () => {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <article className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
+      <section className="grid gap-4">
+        <article
+          id="dashboard-recent-transactions"
+          data-assistant-target="dashboard-recent-transactions"
+          className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
@@ -406,58 +455,16 @@ const DashboardPage = () => {
                 </p>
                 <h3 className="mt-3 text-base font-semibold text-white">{transaction.description}</h3>
                 <p className="mt-2 text-sm text-slate-400">{transaction.jar_key || 'chưa gắn hũ'}</p>
-                <p className="mt-5 text-xl font-bold text-rose-300">
-                  -{formatCurrency(transaction.amount)}
+                <p
+                  className={`mt-5 text-xl font-bold ${
+                    transaction.direction === 'income_adjustment' ? 'text-emerald-300' : 'text-rose-300'
+                  }`}
+                >
+                  {transaction.direction === 'income_adjustment' ? '+' : '-'}
+                  {formatCurrency(transaction.amount)}
                 </p>
               </div>
             ))}
-          </div>
-        </article>
-
-        <article className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Monthly focus
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Điểm cần chú ý</h2>
-            </div>
-            <span className="rounded-full border border-white/10 px-3 py-1 text-sm text-slate-300">
-              {dashboardData?.latest_monthly_income?.month || 'Chưa có tháng'}
-            </span>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p className="text-sm text-slate-400">Người dùng hiện tại</p>
-              <p className="mt-2 text-lg font-semibold text-white">
-                {dashboardData?.user?.display_name || 'Demo User'}
-              </p>
-              <p className="mt-1 text-sm text-slate-500">{dashboardData?.user?.email || '-'}</p>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-400">Nợ đang mở</p>
-                <span className="text-sm font-semibold text-amber-300">
-                  {stats.open_debt_count} khoản
-                </span>
-              </div>
-              <p className="mt-2 text-xl font-bold text-white">{formatCurrency(stats.open_debt_total)}</p>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p className="text-sm text-slate-400">Tín hiệu hệ thống</p>
-              <div className="mt-3 space-y-2 text-sm text-slate-300">
-                <p>API: {health}</p>
-                <p>Kế hoạch gần nhất: {dashboardData?.latest_monthly_income?.month || 'Chưa có'}</p>
-                <p>
-                  Giao dịch gần đây:
-                  {' '}
-                  {dashboardData?.recent_transactions?.length || 0}
-                </p>
-              </div>
-            </div>
           </div>
         </article>
       </section>

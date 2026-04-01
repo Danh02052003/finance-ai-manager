@@ -88,7 +88,11 @@ const ImportExcel = () => {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.2)_0%,rgba(118,75,162,0.15)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20">
+      <section
+        id="import-overview"
+        data-assistant-target="import-overview"
+        className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.2)_0%,rgba(118,75,162,0.15)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20"
+      >
         <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-100/80">
           Import Excel
         </div>
@@ -106,9 +110,15 @@ const ImportExcel = () => {
         ) : null}
       </section>
 
-      <Dropzone file={file} isUploading={isUploading} onFileSelected={handleFileSelected} />
+      <div id="import-dropzone" data-assistant-target="import-dropzone">
+        <Dropzone file={file} isUploading={isUploading} onFileSelected={handleFileSelected} />
+      </div>
 
-      <section className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
+      <section
+        id="import-actions"
+        data-assistant-target="import-actions"
+        className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Thao tác</p>
         <h3 className="mt-2 text-2xl font-semibold text-white">Import workbook</h3>
         <p className="mt-3 text-sm leading-7 text-slate-400">
@@ -144,7 +154,9 @@ const ImportExcel = () => {
         </div>
       </section>
 
-      <ImportSummary result={result} />
+      <div id="import-summary" data-assistant-target="import-summary">
+        <ImportSummary result={result} />
+      </div>
     </div>
   );
 };

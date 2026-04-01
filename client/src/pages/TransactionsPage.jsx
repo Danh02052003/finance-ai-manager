@@ -10,11 +10,13 @@ import { useSearchParams } from 'react-router-dom';
 import {
   createTransaction,
   deleteTransaction,
+  getJarAllocations,
   getJars,
   getTransactions,
   updateTransaction
 } from '../api/dashboardApi.js';
 import { formatCurrency, formatDate } from '../components/formatters.js';
+import JarHistoryInsights from '../components/JarHistoryInsights.jsx';
 import TransactionTable from '../components/TransactionTable.jsx';
 
 const getTodayDateString = () => {
@@ -102,10 +104,25 @@ const parseAmountSearchValue = (value) => {
   return Math.round(numericValue);
 };
 
+const getDaysInMonth = (monthValue) => {
+  if (!monthValue) {
+    return 0;
+  }
+
+  const [year, month] = monthValue.split('-').map(Number);
+
+  if (!year || !month) {
+    return 0;
+  }
+
+  return new Date(year, month, 0).getDate();
+};
+
 const TransactionsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [transactions, setTransactions] = useState([]);
   const [jars, setJars] = useState([]);
+  const [jarAllocations, setJarAllocations] = useState([]);
   const [form, setForm] = useState(createDefaultForm);
   const [editingId, setEditingId] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
@@ -126,6 +143,114 @@ const TransactionsPage = () => {
     () => Array.from(new Set(transactions.map((item) => item.month).filter(Boolean))).sort().reverse(),
     [transactions]
   );
+  const selectedMonthTransactions = useMemo(
+    () => transactions.filter((transaction) => transaction.month === selectedMonthFilter),
+    [selectedMonthFilter, transactions]
+  );
+  const monthAllocationMap = useMemo(
+    () =>
+      new Map(
+        jarAllocations
+          .filter((item) => item.month === selectedMonthFilter)
+          .map((item) => [item.jar_key, item])
+      ),
+    [jarAllocations, selectedMonthFilter]
+  );
+  const selectedJarHistoryEnabled = Boolean(selectedJarFilter && selectedMonthFilter);
+  const selectedJarName = jarNameByKey[selectedJarFilter] || selectedJarFilter || 'Hũ đã chọn';
+  const selectedJarAllocation = monthAllocationMap.get(selectedJarFilter)?.allocated_amount || 0;
+  const selectedJarSpent = selectedMonthTransactions.reduce(
+    (sum, transaction) =>
+      transaction.direction === 'expense' && transaction.jar_key === selectedJarFilter
+        ? sum + (transaction.amount || 0)
+        : sum,
+    0
+  );
+  const selectedJarRemaining = selectedJarAllocation - selectedJarSpent;
+  const daysInSelectedMonth = getDaysInMonth(selectedMonthFilter);
+  const jarDailyBudget = daysInSelectedMonth > 0 ? Math.max(0, Math.floor(selectedJarAllocation / daysInSelectedMonth)) : 0;
+  const jarHistoryDaySummaries = useMemo(() => {
+    if (!selectedJarHistoryEnabled) {
+      return [];
+    }
+
+    const groups = selectedMonthTransactions.reduce((accumulator, transaction) => {
+      if (transaction.direction !== 'expense') {
+        return accumulator;
+      }
+
+      const dayKey = transaction.transaction_date?.slice?.(0, 10) || '';
+
+      if (!dayKey) {
+        return accumulator;
+      }
+
+      if (!accumulator[dayKey]) {
+        accumulator[dayKey] = [];
+      }
+
+      accumulator[dayKey].push(transaction);
+      return accumulator;
+    }, {});
+
+    return Object.entries(groups)
+      .map(([date, dayItems]) => {
+        const selectedJarSpentInDay = dayItems.reduce(
+          (sum, item) => (item.jar_key === selectedJarFilter ? sum + (item.amount || 0) : sum),
+          0
+        );
+
+        if (selectedJarSpentInDay <= 0) {
+          return null;
+        }
+
+        const totalSpentAllJars = dayItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const jarBreakdown = Object.entries(
+          dayItems.reduce((accumulator, item) => {
+            const jarKey = item.jar_key || 'unknown';
+
+            if (!accumulator[jarKey]) {
+              accumulator[jarKey] = 0;
+            }
+
+            accumulator[jarKey] += item.amount || 0;
+            return accumulator;
+          }, {})
+        ).map(([jarKey, amount]) => {
+          const dailyBudget = daysInSelectedMonth > 0
+            ? Math.max(0, Math.floor((monthAllocationMap.get(jarKey)?.allocated_amount || 0) / daysInSelectedMonth))
+            : 0;
+
+          return {
+            jarKey,
+            jarName: jarNameByKey[jarKey] || jarKey,
+            amount,
+            dailyBudget,
+            overspendAmount: Math.max(0, amount - dailyBudget)
+          };
+        });
+
+        return {
+          date,
+          label: formatDate(date),
+          selectedJarSpent: selectedJarSpentInDay,
+          selectedJarDailyBudget: jarDailyBudget,
+          selectedJarOverspendAmount: Math.max(0, selectedJarSpentInDay - jarDailyBudget),
+          totalSpentAllJars,
+          jarBreakdown
+        };
+      })
+      .filter(Boolean)
+      .sort((firstItem, secondItem) => secondItem.date.localeCompare(firstItem.date));
+  }, [
+    daysInSelectedMonth,
+    jarDailyBudget,
+    jarNameByKey,
+    monthAllocationMap,
+    selectedJarFilter,
+    selectedJarHistoryEnabled,
+    selectedMonthTransactions
+  ]);
 
   const filteredTransactions = useMemo(() => {
     const normalizedQuery = normalizeSearchText(searchTerm);
@@ -187,14 +312,16 @@ const TransactionsPage = () => {
 
   const loadTransactions = async () => {
     try {
-      const [transactionResponse, jarResponse] = await Promise.all([
+      const [transactionResponse, jarResponse, allocationResponse] = await Promise.all([
         getTransactions(),
-        getJars()
+        getJars(),
+        getJarAllocations()
       ]);
       const loadedTransactions = Array.isArray(transactionResponse.data) ? transactionResponse.data : [];
 
       setTransactions(loadedTransactions);
       setJars(Array.isArray(jarResponse.data) ? jarResponse.data : []);
+      setJarAllocations(Array.isArray(allocationResponse.data) ? allocationResponse.data : []);
       setSelectedIds((currentIds) =>
         currentIds.filter((id) => loadedTransactions.some((item) => item._id === id))
       );
@@ -399,6 +526,8 @@ const TransactionsPage = () => {
   return (
     <div className="space-y-6">
       <motion.section
+        id="transactions-overview"
+        data-assistant-target="transactions-overview"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.2)_0%,rgba(118,75,162,0.16)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20"
@@ -474,7 +603,11 @@ const TransactionsPage = () => {
         </div>
       ) : null}
 
-      <section className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
+      <section
+        id="transactions-filters"
+        data-assistant-target="transactions-filters"
+        className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
@@ -569,19 +702,43 @@ const TransactionsPage = () => {
         </div>
       </section>
 
-      <TransactionTable
-        items={filteredTransactions}
-        jarNameByKey={jarNameByKey}
-        selectedIds={selectedIds}
-        onToggleSelection={handleToggleSelection}
-        onToggleSelectAll={handleToggleSelectAll}
-        onDeleteSelected={handleDeleteSelected}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      {selectedJarHistoryEnabled ? (
+        <JarHistoryInsights
+          jarName={selectedJarName}
+          month={selectedMonthFilter}
+          remainingAmount={selectedJarRemaining}
+          allocatedAmount={selectedJarAllocation}
+          spentAmount={selectedJarSpent}
+          dailyBudget={jarDailyBudget}
+          daySummaries={jarHistoryDaySummaries}
+        />
+      ) : null}
+
+      <div id="transactions-table" data-assistant-target="transactions-table">
+        <TransactionTable
+          items={filteredTransactions}
+          eyebrow={selectedJarHistoryEnabled ? 'Lịch sử theo hũ' : 'Danh sách giao dịch'}
+          title={
+            selectedJarHistoryEnabled
+              ? `${selectedJarName} · ${selectedMonthFilter}`
+              : 'Giao dịch gần nhất'
+          }
+          jarNameByKey={jarNameByKey}
+          selectedIds={selectedIds}
+          onToggleSelection={handleToggleSelection}
+          onToggleSelectAll={handleToggleSelectAll}
+          onDeleteSelected={handleDeleteSelected}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </div>
 
       {isEditorOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-4 backdrop-blur sm:items-center">
+        <div
+          id="transactions-editor"
+          data-assistant-target="transactions-editor"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-4 backdrop-blur sm:items-center"
+        >
           <div className="w-full max-w-3xl overflow-hidden rounded-[32px] border border-white/10 bg-[#111428] shadow-2xl shadow-black/40">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
               <div>

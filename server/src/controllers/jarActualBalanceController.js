@@ -2,6 +2,7 @@ import {
   createJarActualBalance,
   deleteJarActualBalance,
   listJarActualBalances,
+  triggerDailyYield,
   updateJarActualBalance
 } from '../services/jarActualBalanceService.js';
 
@@ -35,6 +36,15 @@ export const putJarActualBalance = async (req, res, next) => {
 export const removeJarActualBalance = async (req, res, next) => {
   try {
     const result = await deleteJarActualBalance(req.params.id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const postDailyYieldRun = async (req, res, next) => {
+  try {
+    const result = await triggerDailyYield(req.body);
     res.status(200).json(result);
   } catch (error) {
     next(error);
