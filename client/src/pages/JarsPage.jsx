@@ -182,10 +182,6 @@ const JarsPage = () => {
     accumulator[item.jar_key] = (accumulator[item.jar_key] || 0) + (item.amount || 0);
     return accumulator;
   }, {});
-  const totalAllocation = (dashboardData?.latest_jar_allocations || []).reduce(
-    (sum, item) => sum + (item.allocated_amount || 0),
-    0
-  );
   const selectedMonthAllocationTotal = selectedMonthAllocations.reduce(
     (sum, item) => sum + (item.allocated_amount || 0),
     0
@@ -350,7 +346,6 @@ const JarsPage = () => {
         className="grid gap-4 xl:grid-cols-2"
       >
         {jars.map((jar) => {
-          const allocation = allocationMap.get(jar.jar_key);
           const monthlyAllocation = allocationByJar.get(jar.jar_key)?.allocated_amount || 0;
           const spentAmount = spentByJar[jar.jar_key] || 0;
           const positiveAdjustments = positiveAdjustmentsByJar[jar.jar_key] || 0;
