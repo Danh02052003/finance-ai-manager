@@ -1,6 +1,6 @@
 import { formatCurrency } from './formatters.js';
 
-const JarAllocationTable = ({ items, onEdit, onDelete }) => (
+const JarAllocationTable = ({ items }) => (
   <section className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
@@ -27,22 +27,6 @@ const JarAllocationTable = ({ items, onEdit, onDelete }) => (
                 : 'Chưa có tỷ lệ'}
             </p>
             <p className="mt-1 text-sm text-slate-500">{item.note || 'Không có ghi chú'}</p>
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-                onClick={() => onEdit?.(item)}
-              >
-                Sửa
-              </button>
-              <button
-                type="button"
-                className="flex-1 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-2.5 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/15"
-                onClick={() => onDelete?.(item)}
-              >
-                Xóa
-              </button>
-            </div>
           </article>
         ))
       ) : (
@@ -62,7 +46,6 @@ const JarAllocationTable = ({ items, onEdit, onDelete }) => (
               <th className="px-4 py-4">Số tiền</th>
               <th className="px-4 py-4">Tỷ lệ</th>
               <th className="px-4 py-4">Ghi chú</th>
-              <th className="px-4 py-4 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5 bg-slate-950/20">
@@ -80,29 +63,11 @@ const JarAllocationTable = ({ items, onEdit, onDelete }) => (
                       : '-'}
                   </td>
                   <td className="px-4 py-4 text-slate-400">{item.note || '-'}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 font-semibold text-white transition hover:bg-white/10"
-                        onClick={() => onEdit?.(item)}
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-3 py-2 font-semibold text-rose-100 transition hover:bg-rose-400/15"
-                        onClick={() => onDelete?.(item)}
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="px-4 py-10 text-center text-sm text-slate-400">
+                <td colSpan="5" className="px-4 py-10 text-center text-sm text-slate-400">
                   Chưa có dữ liệu phân bổ hũ.
                 </td>
               </tr>

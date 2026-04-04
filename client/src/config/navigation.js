@@ -3,7 +3,6 @@ import {
   BanknotesIcon,
   CalendarDaysIcon,
   CircleStackIcon,
-  Cog6ToothIcon,
   CreditCardIcon,
   ExclamationTriangleIcon,
   HomeIcon
@@ -13,72 +12,79 @@ export const navigationItems = [
   {
     to: '/dashboard',
     label: 'Dashboard',
-    title: 'Sức khỏe tài chính hôm nay',
-    description: 'Theo dõi dòng tiền, hũ và tín hiệu cần hành động.',
+    shortLabel: 'Dash',
+    title: 'Tổng quan tháng hiện tại',
+    description: 'Xem 6 hũ, số dư tháng, giao dịch gần đây và các tín hiệu cần chú ý.',
     icon: HomeIcon,
-    showInBottomNav: true
-  },
-  {
-    to: '/jars',
-    label: '6 Hũ',
-    title: '6 hũ của bạn',
-    description: 'Nhìn từng hũ như một bucket sống động với tiến độ rõ ràng.',
-    icon: BanknotesIcon,
+    group: 'core',
     showInBottomNav: true
   },
   {
     to: '/transactions',
     label: 'Giao dịch',
-    title: 'Nhập nhanh và dọn giao dịch',
-    description: 'Ghi nhận chi tiêu hằng ngày, tìm nhanh và thao tác hàng loạt.',
+    shortLabel: 'Tx',
+    title: 'Nhập tiêu và xem lịch sử',
+    description: 'Nhập nhanh chi tiêu hôm nay, lọc theo hũ, theo tháng và xem theo ngày.',
     icon: CreditCardIcon,
+    group: 'core',
+    showInBottomNav: true
+  },
+  {
+    to: '/jars',
+    label: '6 hũ',
+    shortLabel: 'Hũ',
+    title: 'Chi tiết từng hũ',
+    description: 'Xem phân bổ, đã chi, còn lại và mức dùng gợi ý của từng hũ.',
+    icon: BanknotesIcon,
+    group: 'core',
     showInBottomNav: true
   },
   {
     to: '/monthly-plan',
-    label: 'Kế hoạch tháng',
+    label: 'Kế hoạch',
+    shortLabel: 'Plan',
     title: 'Lập kế hoạch tháng',
-    description: 'Biến thu nhập thành một bản phân bổ 6 hũ dễ theo dõi.',
+    description: 'Tạo thu nhập tháng và để app tự chia 6 hũ theo cấu hình chính.',
     icon: CalendarDaysIcon,
-    showInBottomNav: true
-  },
-  {
-    to: '/actual-balances',
-    label: 'Số dư thực',
-    title: 'Ví thực tế theo tháng',
-    description: 'Lưu phần tiền thật còn giữ theo từng hũ mà không trộn vào ngân sách tháng mới.',
-    icon: CircleStackIcon,
+    group: 'manage',
     showInBottomNav: false
   },
   {
     to: '/debts',
-    label: 'Nợ / quỹ',
-    title: 'Theo dõi nợ và quỹ',
-    description: 'Ưu tiên các khoản cần xử lý trước khi quên.',
+    label: 'Nợ giữa hũ',
+    shortLabel: 'Nợ',
+    title: 'Theo dõi nợ nội bộ',
+    description: 'Quản lý các khoản chi hộ hoặc tạm ứng giữa các hũ.',
     icon: ExclamationTriangleIcon,
+    group: 'manage',
+    showInBottomNav: false
+  },
+  {
+    to: '/actual-balances',
+    label: 'Số dư thực',
+    shortLabel: 'Dư thực',
+    title: 'Snapshot số dư thực',
+    description: 'Lưu phần tiền còn giữ riêng theo tháng và quản lý phát sinh lãi.',
+    icon: CircleStackIcon,
+    group: 'manage',
     showInBottomNav: false
   },
   {
     to: '/import',
     label: 'Import',
+    shortLabel: 'Import',
     title: 'Nhập dữ liệu từ Excel',
-    description: 'Đưa dữ liệu cũ vào app với tóm tắt rõ ràng sau import.',
+    description: 'Upload workbook cũ, xem kết quả import và chạy AI phân loại lại giao dịch.',
     icon: ArrowDownTrayIcon,
-    showInBottomNav: false
-  },
-  {
-    to: '/settings',
-    label: 'Cài đặt',
-    title: 'Thiết lập cá nhân',
-    description: 'Quản lý các tuỳ chọn nền tảng và dữ liệu của bạn.',
-    icon: Cog6ToothIcon,
+    group: 'tools',
     showInBottomNav: false
   }
 ];
 
 export const getPageMeta = (pathname) =>
   navigationItems.find((item) => pathname.startsWith(item.to)) || {
-    label: '6 Hũ Tài Chính',
-    title: '6 Hũ Tài Chính',
-    description: 'Không gian quản lý tài chính cá nhân theo mô hình 6 hũ.'
+    label: 'Finance AI Manager',
+    shortLabel: 'App',
+    title: 'Finance AI Manager',
+    description: 'Ứng dụng quản lý tài chính cá nhân theo mô hình 6 hũ.'
   };

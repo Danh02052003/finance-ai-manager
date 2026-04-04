@@ -7,7 +7,6 @@ import DebtsPage from './pages/DebtsPage.jsx';
 import ImportExcel from './pages/ImportExcel.jsx';
 import JarsPage from './pages/JarsPage.jsx';
 import MonthlyPlanPage from './pages/MonthlyPlanPage.jsx';
-import SettingsPage from './pages/SettingsPage.jsx';
 import TransactionsPage from './pages/TransactionsPage.jsx';
 
 const App = () => (
@@ -21,7 +20,7 @@ const App = () => (
       <Route path="/transactions" element={<TransactionsPage />} />
       <Route path="/debts" element={<DebtsPage />} />
       <Route path="/jars" element={<JarsPage />} />
-      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/settings" element={<Navigate to="/dashboard" replace />} />
     </Route>
   </Routes>
 );

@@ -1,20 +1,21 @@
-import { motion } from 'framer-motion';
 import {
+  ArrowDownTrayIcon,
   ArrowTrendingUpIcon,
-  BanknotesIcon,
-  BoltIcon,
-  SparklesIcon
+  CalendarDaysIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import {
   getDashboard,
   getJarActualBalances,
+  getJarAllocations,
   getJars,
+  getMonthlyIncomes,
   getTransactions
 } from '../api/dashboardApi.js';
-import JarCard from '../components/JarCard.jsx';
+import JarCardMini from '../components/JarCardMini.jsx';
 import { formatCurrency, formatDate } from '../components/formatters.js';
 import {
   getActualBalanceMapByMonth,
@@ -22,451 +23,402 @@ import {
   sumActualBalanceMonth
 } from '../utils/actualBalanceSnapshots.js';
 
-const fallbackStats = {
-  total_jars: 0,
-  active_jars: 0,
-  latest_income_total: 0,
-  latest_allocation_total: 0,
-  recent_transaction_total: 0,
-  open_debt_total: 0,
-  recent_transaction_count: 0,
-  open_debt_count: 0
+const getCurrentMonthValue = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const statCards = [
-  {
-    key: 'latest_income_total',
-    label: 'Thu nhập tháng',
-    icon: BanknotesIcon
-  },
-  {
-    key: 'latest_allocation_total',
-    label: 'Đã phân bổ',
-    icon: SparklesIcon
-  },
-  {
-    key: 'recent_transaction_total',
-    label: 'Chi gần đây',
-    icon: ArrowTrendingUpIcon
-  },
-  {
-    key: 'open_debt_total',
-    label: 'Nợ đang mở',
-    icon: BoltIcon
+const formatDayTitle = (dateValue) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  if (dateValue === today) {
+    return 'Hôm nay';
   }
-];
+
+  if (dateValue === yesterday) {
+    return 'Hôm qua';
+  }
+
+  return formatDate(dateValue);
+};
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState(null);
   const [jars, setJars] = useState([]);
+  const [monthlyIncomes, setMonthlyIncomes] = useState([]);
+  const [jarAllocations, setJarAllocations] = useState([]);
   const [actualBalances, setActualBalances] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthValue());
   const [error, setError] = useState('');
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const [dashboardResponse, jarResponse, actualBalanceResponse, transactionResponse] = await Promise.all([
+        const [
+          dashboardResponse,
+          jarResponse,
+          incomeResponse,
+          allocationResponse,
+          actualBalanceResponse,
+          transactionResponse
+        ] = await Promise.all([
           getDashboard(),
           getJars(),
+          getMonthlyIncomes(),
+          getJarAllocations(),
           getJarActualBalances(),
           getTransactions()
         ]);
 
+        const loadedJars = Array.isArray(jarResponse.data) ? jarResponse.data : [];
+        const loadedIncomes = Array.isArray(incomeResponse.data) ? incomeResponse.data : [];
+        const loadedAllocations = Array.isArray(allocationResponse.data) ? allocationResponse.data : [];
+        const loadedActualBalances = Array.isArray(actualBalanceResponse.data)
+          ? actualBalanceResponse.data
+          : [];
+        const loadedTransactions = Array.isArray(transactionResponse.data) ? transactionResponse.data : [];
+
         setDashboardData(dashboardResponse.data || null);
-        setJars(Array.isArray(jarResponse.data) ? jarResponse.data : []);
-        setActualBalances(Array.isArray(actualBalanceResponse.data) ? actualBalanceResponse.data : []);
-        setTransactions(Array.isArray(transactionResponse.data) ? transactionResponse.data : []);
+        setJars(loadedJars);
+        setMonthlyIncomes(loadedIncomes);
+        setJarAllocations(loadedAllocations);
+        setActualBalances(loadedActualBalances);
+        setTransactions(loadedTransactions);
+
+        const availableMonths = Array.from(
+          new Set([
+            ...loadedIncomes.map((item) => item.month),
+            ...loadedAllocations.map((item) => item.month),
+            ...loadedTransactions.map((item) => item.month),
+            ...loadedActualBalances.map((item) => item.month)
+          ].filter(Boolean))
+        ).sort().reverse();
+
+        const currentMonth = getCurrentMonthValue();
+        setSelectedMonth(
+          availableMonths.includes(currentMonth) ? currentMonth : availableMonths[0] || currentMonth
+        );
         setError('');
       } catch (requestError) {
-        setError('Không tải được dashboard. Hãy thử tải lại sau.');
+        setError('Không tải được dashboard. Hãy thử lại sau.');
       }
     };
 
     loadDashboard();
   }, []);
 
-  const stats = dashboardData?.stats || fallbackStats;
-  const allocationMap = useMemo(
+  const availableMonths = useMemo(
     () =>
-      new Map(
-        (dashboardData?.latest_jar_allocations || []).map((item) => [item.jar_key, item])
-      ),
-    [dashboardData?.latest_jar_allocations]
+      Array.from(
+        new Set([
+          ...monthlyIncomes.map((item) => item.month),
+          ...jarAllocations.map((item) => item.month),
+          ...transactions.map((item) => item.month),
+          ...actualBalances.map((item) => item.month)
+        ].filter(Boolean))
+      ).sort().reverse(),
+    [actualBalances, jarAllocations, monthlyIncomes, transactions]
   );
-  const latestIncome = dashboardData?.latest_monthly_income?.total_amount || 0;
-  const focusMonth =
-    dashboardData?.latest_monthly_income?.month ||
-    dashboardData?.latest_jar_allocations?.[0]?.month ||
-    '';
-  const allocationProgress = latestIncome
-    ? Math.min(100, Math.round((stats.latest_allocation_total / latestIncome) * 100))
+
+  const selectedMonthIncome =
+    monthlyIncomes.find((item) => item.month === selectedMonth)?.total_amount || 0;
+  const selectedMonthAllocations = jarAllocations.filter((item) => item.month === selectedMonth);
+  const selectedMonthTransactions = transactions.filter((item) => item.month === selectedMonth);
+  const allocationByJar = new Map(selectedMonthAllocations.map((item) => [item.jar_key, item]));
+  const spentByJar = selectedMonthTransactions.reduce((accumulator, item) => {
+    if (!item.jar_key || item.direction !== 'expense') {
+      return accumulator;
+    }
+
+    accumulator[item.jar_key] = (accumulator[item.jar_key] || 0) + (item.amount || 0);
+    return accumulator;
+  }, {});
+  const adjustmentByJar = selectedMonthTransactions.reduce((accumulator, item) => {
+    if (!item.jar_key || item.direction !== 'income_adjustment') {
+      return accumulator;
+    }
+
+    accumulator[item.jar_key] = (accumulator[item.jar_key] || 0) + (item.amount || 0);
+    return accumulator;
+  }, {});
+
+  const previousReserveMonth = getPreviousActualBalanceMonth(actualBalances, selectedMonth);
+  const reserveMap = getActualBalanceMapByMonth(actualBalances, previousReserveMonth);
+  const reserveTotal = sumActualBalanceMonth(actualBalances, previousReserveMonth);
+
+  const jarCards = jars.map((jar) => {
+    const allocatedAmount = allocationByJar.get(jar.jar_key)?.allocated_amount || 0;
+    const spentAmount = spentByJar[jar.jar_key] || 0;
+    const adjustmentAmount = adjustmentByJar[jar.jar_key] || 0;
+    const remainingAmount = allocatedAmount + adjustmentAmount - spentAmount;
+    const reserveAmount = reserveMap.get(jar.jar_key)?.actual_balance_amount || 0;
+
+    return {
+      jar,
+      allocatedAmount,
+      spentAmount,
+      adjustmentAmount,
+      remainingAmount,
+      reserveAmount
+    };
+  });
+
+  const totalAllocated = jarCards.reduce((sum, item) => sum + item.allocatedAmount, 0);
+  const totalSpent = jarCards.reduce((sum, item) => sum + item.spentAmount, 0);
+  const totalAdjustments = jarCards.reduce((sum, item) => sum + item.adjustmentAmount, 0);
+  const totalRemaining = jarCards.reduce((sum, item) => sum + item.remainingAmount, 0);
+
+  const recentDayCards = useMemo(() => {
+    const groups = selectedMonthTransactions.reduce((accumulator, item) => {
+      if (item.direction !== 'expense') {
+        return accumulator;
+      }
+
+      const dateKey = item.transaction_date?.slice?.(0, 10);
+
+      if (!dateKey) {
+        return accumulator;
+      }
+
+      if (!accumulator[dateKey]) {
+        accumulator[dateKey] = [];
+      }
+
+      accumulator[dateKey].push(item);
+      return accumulator;
+    }, {});
+
+    return Object.entries(groups)
+      .map(([date, items]) => {
+        const total = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const categoryMap = items.reduce((accumulator, item) => {
+          const key = item.category || 'uncategorized';
+          accumulator[key] = (accumulator[key] || 0) + (item.amount || 0);
+          return accumulator;
+        }, {});
+        const topCategory =
+          Object.entries(categoryMap).sort((a, b) => b[1] - a[1])[0]?.[0] || 'uncategorized';
+
+        return {
+          date,
+          title: formatDayTitle(date),
+          subtitle: formatDate(date),
+          total,
+          topCategory,
+          count: items.length
+        };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 7);
+  }, [selectedMonthTransactions]);
+
+  const overspentJarCount = jarCards.filter((item) => item.remainingAmount < 0).length;
+  const openDebtCount = dashboardData?.stats?.open_debt_count || 0;
+  const allocationCompletion = selectedMonthIncome
+    ? Math.round((totalAllocated / selectedMonthIncome) * 100)
     : 0;
-  const spentByJar = useMemo(
-    () =>
-      transactions.reduce((accumulator, item) => {
-        if (!focusMonth || item.month !== focusMonth || item.direction !== 'expense' || !item.jar_key) {
-          return accumulator;
-        }
-
-        accumulator[item.jar_key] = (accumulator[item.jar_key] || 0) + (item.amount || 0);
-        return accumulator;
-      }, {}),
-    [focusMonth, transactions]
-  );
-  const positiveAdjustmentsByJar = useMemo(
-    () =>
-      transactions.reduce((accumulator, item) => {
-        if (!focusMonth || item.month !== focusMonth || item.direction !== 'income_adjustment' || !item.jar_key) {
-          return accumulator;
-        }
-
-        accumulator[item.jar_key] = (accumulator[item.jar_key] || 0) + (item.amount || 0);
-        return accumulator;
-      }, {}),
-    [focusMonth, transactions]
-  );
-  const previousSnapshotMonth = useMemo(() => {
-    if (focusMonth) {
-      return getPreviousActualBalanceMonth(actualBalances, focusMonth);
-    }
-
-    return (
-      Array.from(new Set(actualBalances.map((item) => item.month).filter(Boolean))).sort().reverse()[0] ||
-      ''
-    );
-  }, [actualBalances, focusMonth]);
-  const previousActualBalanceMap = useMemo(
-    () => getActualBalanceMapByMonth(actualBalances, previousSnapshotMonth),
-    [actualBalances, previousSnapshotMonth]
-  );
-  const previousActualBalanceTotal = useMemo(
-    () => sumActualBalanceMonth(actualBalances, previousSnapshotMonth),
-    [actualBalances, previousSnapshotMonth]
-  );
-  const focusMonthNetYieldTotal = useMemo(
-    () =>
-      transactions.reduce(
-        (sum, item) =>
-          sum +
-          (item.month === focusMonth && item.direction === 'income_adjustment' && item.source === 'momo_yield'
-            ? item.amount || 0
-            : 0),
-        0
-      ),
-    [focusMonth, transactions]
-  );
-  const netAmount = stats.latest_income_total - stats.recent_transaction_total;
-  const insightItems = [
-    allocationProgress >= 80
-      ? { label: 'Tiết kiệm tốt', tone: 'emerald' }
-      : { label: 'Cần chốt kế hoạch tháng', tone: 'amber' },
-    stats.recent_transaction_total > stats.latest_income_total * 0.2 && latestIncome
-      ? { label: 'Ăn uống hoặc chi tiêu đang tăng', tone: 'amber' }
-      : { label: 'Chi tiêu đang trong tầm kiểm soát', tone: 'sky' },
-    stats.open_debt_count > 0
-      ? { label: 'Có khoản nợ cần theo dõi', tone: 'rose' }
-      : { label: 'Chưa có nợ mở', tone: 'emerald' }
+  const insightBadges = [
+    `${allocationCompletion || 0}% budget đã phân bổ`,
+    overspentJarCount > 0 ? `${overspentJarCount} hũ đang vượt mức` : 'Các hũ đang trong ngưỡng',
+    openDebtCount > 0 ? `${openDebtCount} khoản nợ cần theo dõi` : 'Không có nợ mở'
   ];
-  const hasAnyData =
-    stats.latest_income_total > 0 ||
-    stats.recent_transaction_count > 0 ||
-    stats.open_debt_count > 0 ||
-    jars.length > 0;
 
-  const handleSpendFromJar = (jar) => {
-    const params = new URLSearchParams({
-      quickAdd: '1',
-      jar: jar.jar_key
-    });
-
-    if (focusMonth) {
-      params.set('month', focusMonth);
-    }
-
+  const handleOpenQuickAdd = () => {
+    const params = new URLSearchParams({ quickAdd: '1', month: selectedMonth });
     navigate(`/transactions?${params.toString()}`);
   };
 
-  const handleViewJarHistory = (jar) => {
-    const params = new URLSearchParams({
-      jar: jar.jar_key
-    });
-
-    if (focusMonth) {
-      params.set('month', focusMonth);
-    }
-
+  const handleOpenJarHistory = (jar) => {
+    const params = new URLSearchParams({ jar: jar.jar_key, month: selectedMonth });
     navigate(`/transactions?${params.toString()}`);
   };
+
+  const handleOpenDayHistory = (day) => {
+    const params = new URLSearchParams({ month: selectedMonth, date: day.date });
+    navigate(`/transactions?${params.toString()}`);
+  };
+
+  const hasBudgetData = selectedMonthIncome > 0 || totalAllocated > 0 || totalSpent > 0;
 
   return (
-    <div className="space-y-6">
-      <motion.section
-        id="dashboard-overview"
-        data-assistant-target="dashboard-overview"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.25)_0%,rgba(118,75,162,0.25)_45%,rgba(15,15,35,0.95)_100%)] p-6 shadow-2xl shadow-indigo-950/25"
-      >
-        <div className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-100/80">
-              Snapshot hôm nay
-            </div>
-            <h1 className="mt-5 max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Nhìn nhanh sức khỏe tài chính để biết hôm nay nên hành động gì trước.
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-              Bạn đang theo dõi {stats.active_jars}/{stats.total_jars} hũ hoạt động. Mọi số liệu ở đây
-              tập trung vào phần thật sự hữu ích cho quyết định chi tiêu trong ngày.
-            </p>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-3xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Thu nhập gần nhất</p>
-                <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(stats.latest_income_total)}</p>
-              </div>
-              <div className="rounded-3xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Chi gần đây</p>
-                <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(stats.recent_transaction_total)}</p>
-              </div>
-              <div className="rounded-3xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Chênh lệch</p>
-                <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(netAmount)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-white/10 bg-slate-950/35 p-5 backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Tiến độ kế hoạch</p>
-                <h2 className="mt-2 text-xl font-semibold text-white">Mức hoàn thiện tháng này</h2>
-              </div>
-              <div className="rounded-full bg-emerald-400/15 px-3 py-1 text-sm font-semibold text-emerald-300">
-                {allocationProgress}%
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-5">
-              <div
-                className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full"
-                style={{
-                  background: `conic-gradient(#10b981 ${allocationProgress}%, rgba(255,255,255,0.08) 0)`
-                }}
-              >
-                <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-[#111428]">
-                  <span className="text-2xl font-bold text-white">{allocationProgress}%</span>
-                  <span className="text-[10px] uppercase tracking-[0.22em] text-slate-400">
-                    goal
-                  </span>
-                </div>
-              </div>
-
-              <div className="min-w-0 flex-1 space-y-4">
-                <div>
-                  <p className="text-sm text-slate-400">Đã phân bổ</p>
-                  <p className="text-lg font-semibold text-white">{formatCurrency(stats.latest_allocation_total)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-400">Thu nhập tháng hiện tại</p>
-                  <p className="text-lg font-semibold text-white">{formatCurrency(latestIncome)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {insightItems.map((item) => (
-                <span
-                  key={item.label}
-                  className={[
-                    'rounded-full px-3 py-1.5 text-sm font-medium',
-                    item.tone === 'emerald' && 'bg-emerald-400/15 text-emerald-200',
-                    item.tone === 'amber' && 'bg-amber-400/15 text-amber-200',
-                    item.tone === 'rose' && 'bg-rose-400/15 text-rose-200',
-                    item.tone === 'sky' && 'bg-sky-400/15 text-sky-200'
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  {item.label}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.section>
-
-      {error ? (
-        <div className="rounded-3xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-          {error}
-        </div>
-      ) : null}
-
-      {!hasAnyData ? (
-        <section className="rounded-[28px] border border-dashed border-white/10 bg-white/5 p-10 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Empty state</p>
-          <h2 className="mt-4 text-2xl font-semibold text-white">
-            Chào mừng! Nhập giao dịch đầu tiên để xem tổng quan.
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-            Khi có dữ liệu, dashboard sẽ hiển thị mức thu, chi, trạng thái 6 hũ và các tín hiệu
-            cần chú ý trong ngày.
-          </p>
-        </section>
-      ) : null}
-
+    <div className="space-y-5">
       <section
-        id="dashboard-stats"
-        data-assistant-target="dashboard-stats"
-        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+        id="dashboard-home"
+        data-assistant-target="dashboard-home"
+        className="rounded-2xl border border-white/8 bg-(--surface-strong) p-4 shadow-sm"
       >
-        {statCards.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <article
-              key={item.key}
-              className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-400">{item.label}</p>
-                <span className="rounded-2xl bg-white/5 p-2 text-slate-300">
-                  <Icon className="h-5 w-5" />
-                </span>
-              </div>
-              <p className="mt-5 text-3xl font-bold tracking-tight text-white">
-                {formatCurrency(stats[item.key])}
-              </p>
-            </article>
-          );
-        })}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-[28px] border border-emerald-400/20 bg-emerald-400/10 p-5 shadow-lg shadow-slate-950/20">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-100/80">
-            Lãi ròng tháng hiện tại
-          </p>
-          <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(focusMonthNetYieldTotal)}</p>
-          <p className="mt-2 text-sm text-emerald-100/80">
-            Tổng lợi nhuận MoMo đã ghi vào tháng {focusMonth || 'hiện tại'}.
-          </p>
-        </article>
-      </section>
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">6 Jars</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Snapshot từng hũ</h2>
-          </div>
-        </div>
-
-        <div
-          id="dashboard-actual-reserve"
-          data-assistant-target="dashboard-actual-reserve"
-          className="rounded-[28px] border border-sky-400/20 bg-sky-400/10 p-5 text-sm text-sky-100 shadow-lg shadow-slate-950/20"
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-100/80">
-            Số dư thực giữ riêng
-          </p>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-3xl font-bold text-white">
-                {previousSnapshotMonth ? formatCurrency(previousActualBalanceTotal) : '--'}
-              </p>
-              <p className="mt-2 leading-6">
-                {previousSnapshotMonth
-                  ? `Lấy từ snapshot ${previousSnapshotMonth}. Khoản này chỉ để đối chiếu, không cộng vào ngân sách ${focusMonth || 'tháng hiện tại'}.`
-                  : 'Chưa có snapshot số dư thực từ tháng trước để đối chiếu.'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div
-          id="dashboard-jars"
-          data-assistant-target="dashboard-jars"
-          className="grid gap-4 xl:grid-cols-3"
-        >
-          {jars.slice(0, 6).map((jar) => {
-            const allocation = allocationMap.get(jar.jar_key);
-            const amount = allocation?.allocated_amount || 0;
-            const percentage = allocation?.allocation_percentage ?? jar.target_percentage ?? 0;
-            const spentAmount = spentByJar[jar.jar_key] || 0;
-            const positiveAdjustments = positiveAdjustmentsByJar[jar.jar_key] || 0;
-            const remainingAmount = amount + positiveAdjustments - spentAmount;
-            const previousActualBalance = previousActualBalanceMap.get(jar.jar_key)?.actual_balance_amount;
-
-            return (
-              <JarCard
-                key={jar.jar_key}
-                jar={jar}
-                amount={amount}
-                percentage={percentage}
-                spentAmount={spentAmount}
-                remainingAmount={remainingAmount}
-                reserveAmount={typeof previousActualBalance === 'number' ? previousActualBalance : null}
-                reserveLabel={previousSnapshotMonth ? `Giữ riêng ${previousSnapshotMonth}` : ''}
-                deltaLabel={
-                  allocation
-                    ? positiveAdjustments > 0
-                      ? `Phân bổ ${formatCurrency(amount)} + điều chỉnh ${formatCurrency(positiveAdjustments)}`
-                      : `Phân bổ tháng ${allocation.month}`
-                    : 'Chưa có phân bổ gần nhất'
-                }
-                monthLabel={focusMonth || 'tháng gần nhất'}
-                onSecondaryAction={handleSpendFromJar}
-                onPrimaryAction={handleViewJarHistory}
-              />
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="grid gap-4">
-        <article
-          id="dashboard-recent-transactions"
-          data-assistant-target="dashboard-recent-transactions"
-          className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Recent transactions
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Giao dịch gần đây</h2>
-            </div>
-            <span className="rounded-full border border-white/10 px-3 py-1 text-sm text-slate-300">
-              {stats.recent_transaction_count} giao dịch
-            </span>
-          </div>
-
-          <div className="mt-5 flex gap-3 overflow-x-auto pb-1">
-            {(dashboardData?.recent_transactions || []).map((transaction) => (
-              <div
-                key={transaction._id}
-                className="min-w-[230px] rounded-3xl border border-white/10 bg-slate-950/40 p-4"
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Dashboard
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200">
+                <CalendarDaysIcon className="h-4 w-4 text-slate-400" />
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(event) => setSelectedMonth(event.target.value)}
+                  className="bg-transparent outline-none"
+                />
+              </label>
+              <Link
+                to="/monthly-plan"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10"
               >
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
-                  {formatDate(transaction.transaction_date)}
-                </p>
-                <h3 className="mt-3 text-base font-semibold text-white">{transaction.description}</h3>
-                <p className="mt-2 text-sm text-slate-400">{transaction.jar_key || 'chưa gắn hũ'}</p>
-                <p
-                  className={`mt-5 text-xl font-bold ${
-                    transaction.direction === 'income_adjustment' ? 'text-emerald-300' : 'text-rose-300'
-                  }`}
-                >
-                  {transaction.direction === 'income_adjustment' ? '+' : '-'}
-                  {formatCurrency(transaction.amount)}
-                </p>
-              </div>
-            ))}
+                <CalendarDaysIcon className="h-4 w-4" />
+                <span>Plan tháng</span>
+              </Link>
+            </div>
           </div>
-        </article>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleOpenQuickAdd}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400"
+            >
+              <PlusIcon className="h-4 w-4" />
+              <span>Nhập tiêu hôm nay</span>
+            </button>
+            <Link
+              to="/import"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+            >
+              <ArrowDownTrayIcon className="h-4 w-4" />
+              <span>Import</span>
+            </Link>
+          </div>
+        </div>
+
+        {error ? (
+          <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+            {error}
+          </div>
+        ) : null}
+
+        {hasBudgetData ? (
+          <>
+            <div className="mt-5 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+              <div>
+                <p className="text-sm text-slate-400">Tổng dư tháng {selectedMonth}</p>
+                <h1 className="mt-2 text-4xl font-bold tracking-tight text-emerald-400 sm:text-5xl">
+                  {formatCurrency(totalRemaining)}
+                </h1>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {insightBadges.map((badge) => (
+                    <span
+                      key={badge}
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <article className="rounded-2xl border border-white/8 bg-white/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Phân bổ tháng
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{formatCurrency(totalAllocated)}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Thu nhập {formatCurrency(selectedMonthIncome)}
+                  </p>
+                </article>
+                <article className="rounded-2xl border border-sky-400/15 bg-sky-400/8 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-100/70">
+                    Dư thực giữ riêng
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
+                    {previousReserveMonth ? formatCurrency(reserveTotal) : '--'}
+                  </p>
+                  <p className="mt-1 text-sm text-sky-100/70">
+                    {previousReserveMonth ? `Snapshot ${previousReserveMonth}` : 'Chưa có snapshot tháng trước'}
+                  </p>
+                </article>
+              </div>
+            </div>
+
+            <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {jarCards.map((item) => (
+                <JarCardMini
+                  key={item.jar.jar_key}
+                  jar={item.jar}
+                  remainingAmount={item.remainingAmount}
+                  allocatedAmount={item.allocatedAmount}
+                  spentAmount={item.spentAmount}
+                  adjustmentAmount={item.adjustmentAmount}
+                  reserveAmount={item.reserveAmount}
+                  onClick={handleOpenJarHistory}
+                />
+              ))}
+            </section>
+
+            <section className="mt-5 rounded-2xl border border-white/8 bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    7 ngày gần đây
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold text-white">Lịch sử theo ngày</h2>
+                </div>
+                <Link
+                  to={`/transactions?month=${selectedMonth}`}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+                >
+                  <ArrowTrendingUpIcon className="h-4 w-4" />
+                  <span>Xem tất cả</span>
+                </Link>
+              </div>
+
+              {recentDayCards.length > 0 ? (
+                <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+                  {recentDayCards.map((day) => (
+                    <button
+                      key={day.date}
+                      type="button"
+                      onClick={() => handleOpenDayHistory(day)}
+                      className="min-w-[220px] rounded-2xl border border-white/8 bg-(--surface-strong) p-4 text-left shadow-sm transition hover:border-white/14 hover:bg-white/5"
+                    >
+                      <p className="text-sm font-semibold text-white">{day.title}</p>
+                      <p className="mt-1 text-xs text-slate-500">{day.subtitle}</p>
+                      <p className="mt-4 text-2xl font-bold text-rose-300">{formatCurrency(day.total)}</p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        {day.count} giao dịch · top {day.topCategory}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-400">
+                  Tháng này chưa có giao dịch nào để hiển thị lịch sử gần đây.
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          <div className="mt-5 rounded-2xl border border-dashed border-white/10 bg-white/5 p-8 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Empty state
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">Nhập thu nhập tháng để bắt đầu</h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+              Khi có kế hoạch tháng, dashboard sẽ hiển thị 6 hũ, số dư tháng và lịch sử giao dịch gần đây ngay lập tức.
+            </p>
+            <Link
+              to="/monthly-plan"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400"
+            >
+              <CalendarDaysIcon className="h-4 w-4" />
+              <span>Tạo kế hoạch tháng</span>
+            </Link>
+          </div>
+        )}
       </section>
     </div>
   );

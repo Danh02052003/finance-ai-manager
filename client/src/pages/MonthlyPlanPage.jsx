@@ -15,7 +15,7 @@ import {
 } from '../api/dashboardApi.js';
 import JarAllocationTable from '../components/JarAllocationTable.jsx';
 import MonthlyIncomeTable from '../components/MonthlyIncomeTable.jsx';
-import { formatCurrency, formatDate } from '../components/formatters.js';
+import { formatCurrency } from '../components/formatters.js';
 import {
   formatMoneyInputValue,
   getCurrentMonthValue,
@@ -50,24 +50,13 @@ const defaultIncomeForm = {
   target_jar_key: 'essentials'
 };
 
-const defaultAllocationForm = {
-  monthly_income_id: '',
-  jar_key: '',
-  allocated_amount: '',
-  allocation_percentage: '',
-  note: ''
-};
-
 const MonthlyPlanPage = () => {
   const incomeFormRef = useRef(null);
-  const allocationFormRef = useRef(null);
   const [monthlyIncomes, setMonthlyIncomes] = useState([]);
   const [jarAllocations, setJarAllocations] = useState([]);
   const [jars, setJars] = useState([]);
   const [incomeForm, setIncomeForm] = useState(defaultIncomeForm);
-  const [allocationForm, setAllocationForm] = useState(defaultAllocationForm);
   const [editingIncomeId, setEditingIncomeId] = useState('');
-  const [editingAllocationId, setEditingAllocationId] = useState('');
   const [message, setMessage] = useState('Đang tải dữ liệu kế hoạch tháng.');
   const [error, setError] = useState('');
 
@@ -82,9 +71,9 @@ const MonthlyPlanPage = () => {
       setMonthlyIncomes(Array.isArray(incomeResponse.data) ? incomeResponse.data : []);
       setJarAllocations(Array.isArray(allocationResponse.data) ? allocationResponse.data : []);
       setJars(Array.isArray(jarResponse.data) ? jarResponse.data : []);
-      setMessage('Dữ liệu kế hoạch tháng đã được tải.');
+      setMessage('Dữ liệu kế hoạch tháng đã sẵn sàng.');
       setError('');
-    } catch (requestError) {
+    } catch {
       setError('Không tải được dữ liệu kế hoạch tháng.');
     }
   };
@@ -93,28 +82,17 @@ const MonthlyPlanPage = () => {
     loadMonthlyPlanData();
   }, []);
 
-  const monthlyIncomeOptions = useMemo(
+  const focusedIncome = monthlyIncomes.find((item) => item._id === editingIncomeId) || monthlyIncomes[0] || null;
+  const focusedAllocations = useMemo(
     () =>
-      monthlyIncomes.map((item) => ({
-        value: item._id,
-        label: `${item.month} - ${formatCurrency(item.total_amount || 0)}`
-      })),
-    [monthlyIncomes]
+      jarAllocations.filter(
+        (item) =>
+          item.monthly_income_id === focusedIncome?._id ||
+          (focusedIncome?.month && item.month === focusedIncome.month)
+      ),
+    [focusedIncome, jarAllocations]
   );
-  const latestMonthlyIncome = monthlyIncomes[0] || null;
-  const focusedIncomeId =
-    allocationForm.monthly_income_id || editingIncomeId || latestMonthlyIncome?._id || '';
-  const focusedIncome =
-    monthlyIncomes.find((item) => item._id === focusedIncomeId) || latestMonthlyIncome || null;
-  const focusedAllocations = jarAllocations.filter(
-    (item) =>
-      item.monthly_income_id === focusedIncome?._id ||
-      (focusedIncome?.month && item.month === focusedIncome.month)
-  );
-  const allocatedTotal = focusedAllocations.reduce(
-    (sum, item) => sum + (item.allocated_amount || 0),
-    0
-  );
+  const allocatedTotal = focusedAllocations.reduce((sum, item) => sum + (item.allocated_amount || 0), 0);
   const focusedIncomeTotal = focusedIncome?.total_amount || 0;
   const remainingAmount = focusedIncomeTotal - allocatedTotal;
   const completionRate = focusedIncomeTotal
@@ -131,20 +109,18 @@ const MonthlyPlanPage = () => {
     }));
   };
 
-  const handleAllocationChange = (event) => {
-    const { name, value } = event.target;
-    setAllocationForm((currentForm) => ({
-      ...currentForm,
-      [name]: value
-    }));
-  };
-
   const resetIncomeForm = () => {
     setIncomeForm(defaultIncomeForm);
     setEditingIncomeId('');
   };
 
-  const syncAutoAllocations = async (monthlyIncomeId, totalAmount, month, allocationMode, targetJarKey) => {
+  const syncAutoAllocations = async (
+    monthlyIncomeId,
+    totalAmount,
+    month,
+    allocationMode,
+    targetJarKey
+  ) => {
     const existingAllocations = jarAllocations.filter(
       (item) => item.monthly_income_id === monthlyIncomeId || item.month === month
     );
@@ -155,7 +131,7 @@ const MonthlyPlanPage = () => {
               jar_key: targetJarKey,
               allocated_amount: Math.round(Number(totalAmount)),
               allocation_percentage: 100,
-              note: 'Nạp thẳng vào một hũ từ luồng nhập thu nhập.'
+              note: 'Dồn toàn bộ thu nhập tháng vào một hũ.'
             }
           ]
         : Object.entries(CLASSIC_JAR_RATIOS).map(([jarKey, percentage]) => ({
@@ -192,11 +168,6 @@ const MonthlyPlanPage = () => {
     );
   };
 
-  const resetAllocationForm = () => {
-    setAllocationForm(defaultAllocationForm);
-    setEditingAllocationId('');
-  };
-
   const handleIncomeSubmit = async (event) => {
     event.preventDefault();
 
@@ -218,7 +189,7 @@ const MonthlyPlanPage = () => {
           incomeForm.allocation_mode,
           incomeForm.target_jar_key
         );
-        setMessage('Đã cập nhật thu nhập tháng.');
+        setMessage('Đã cập nhật thu nhập tháng và làm mới phân bổ.');
       } else {
         const response = await createMonthlyIncome(normalizedIncomePayload);
         const createdIncome = response?.data;
@@ -235,8 +206,8 @@ const MonthlyPlanPage = () => {
 
         setMessage(
           incomeForm.allocation_mode === 'single_jar'
-            ? 'Đã tạo thu nhập tháng và nạp thẳng vào hũ đã chọn.'
-            : 'Đã tạo thu nhập tháng và tự chia theo tỷ lệ 6 hũ chuẩn.'
+            ? 'Đã tạo thu nhập tháng và dồn toàn bộ vào hũ đã chọn.'
+            : 'Đã tạo thu nhập tháng và tự chia theo tỷ lệ 6 hũ.'
         );
       }
 
@@ -244,25 +215,6 @@ const MonthlyPlanPage = () => {
       await loadMonthlyPlanData();
     } catch (requestError) {
       setError(requestError.message || 'Không lưu được thu nhập tháng.');
-    }
-  };
-
-  const handleAllocationSubmit = async (event) => {
-    event.preventDefault();
-
-    try {
-      if (editingAllocationId) {
-        await updateJarAllocation(editingAllocationId, allocationForm);
-        setMessage('Đã cập nhật phân bổ hũ.');
-      } else {
-        await createJarAllocation(allocationForm);
-        setMessage('Đã tạo phân bổ hũ.');
-      }
-
-      resetAllocationForm();
-      await loadMonthlyPlanData();
-    } catch (requestError) {
-      setError(requestError.message || 'Không lưu được phân bổ hũ.');
     }
   };
 
@@ -290,18 +242,6 @@ const MonthlyPlanPage = () => {
     incomeFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const handleEditAllocation = (jarAllocation) => {
-    setEditingAllocationId(jarAllocation._id);
-    setAllocationForm({
-      monthly_income_id: jarAllocation.monthly_income_id || '',
-      jar_key: jarAllocation.jar_key || '',
-      allocated_amount: jarAllocation.allocated_amount?.toString() || '',
-      allocation_percentage: jarAllocation.allocation_percentage?.toString() || '',
-      note: jarAllocation.note || ''
-    });
-    allocationFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const handleDeleteIncome = async (monthlyIncome) => {
     const isConfirmed = window.confirm(
       'Bạn có chắc muốn xóa thu nhập tháng này? Các phân bổ liên quan cũng sẽ bị xóa.'
@@ -323,25 +263,6 @@ const MonthlyPlanPage = () => {
     }
   };
 
-  const handleDeleteAllocation = async (jarAllocation) => {
-    const isConfirmed = window.confirm('Bạn có chắc muốn xóa phân bổ hũ này?');
-
-    if (!isConfirmed) {
-      return;
-    }
-
-    try {
-      await deleteJarAllocation(jarAllocation._id);
-      if (editingAllocationId === jarAllocation._id) {
-        resetAllocationForm();
-      }
-      setMessage('Đã xóa phân bổ hũ.');
-      await loadMonthlyPlanData();
-    } catch (requestError) {
-      setError(requestError.message || 'Không xóa được phân bổ hũ.');
-    }
-  };
-
   return (
     <div className="space-y-6">
       <motion.section
@@ -357,11 +278,11 @@ const MonthlyPlanPage = () => {
               Monthly planning
             </div>
             <h1 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Biến thu nhập tháng thành một plan 6 hũ rõ ràng và dễ theo dõi.
+              Biến thu nhập tháng thành plan 6 hũ rõ ràng và dễ theo dõi.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-              {message}. Mục tiêu của màn này là thấy ngay thu nhập, phần đã phân bổ và số còn lại
-              thay vì phải đọc hai bảng biểu rời rạc.
+              {message}. Đây là khối summary duy nhất của tháng đang focus, nên tôi đã bỏ các khối nhắc lại cùng bộ
+              số ở phía dưới.
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -398,21 +319,14 @@ const MonthlyPlanPage = () => {
               />
             </div>
 
-            <div className="mt-6 space-y-4">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-slate-400">Đã phân bổ</p>
-                <p className="mt-2 text-2xl font-bold text-white">{formatCurrency(allocatedTotal)}</p>
+            <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-emerald-200">
+                <SparklesIcon className="h-5 w-5" />
+                <span className="text-sm font-semibold">Planning note</span>
               </div>
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="flex items-center gap-2 text-emerald-200">
-                  <SparklesIcon className="h-5 w-5" />
-                  <span className="text-sm font-semibold">Planning note</span>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Khi completion tiến gần 100%, bạn đã gần như hoàn tất việc phân bổ thu nhập cho
-                  toàn bộ 6 hũ của tháng.
-                </p>
-              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Khi bạn cập nhật thu nhập tháng, app sẽ tự đồng bộ allocations thay vì bắt nhập tay từng hũ.
+              </p>
             </div>
           </div>
         </div>
@@ -514,14 +428,14 @@ const MonthlyPlanPage = () => {
                   className="w-full bg-transparent text-sm text-white outline-none"
                 >
                   <option value="split_classic">Chia theo 6 hũ chuẩn</option>
-                  <option value="single_jar">Nạp thẳng vào một hũ</option>
+                  <option value="single_jar">Dồn vào một hũ</option>
                 </select>
               </label>
 
               {incomeForm.allocation_mode === 'single_jar' ? (
                 <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
                   <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Nạp vào hũ
+                    Dồn vào hũ
                   </span>
                   <select
                     aria-label="Hũ nhận thu nhập"
@@ -539,8 +453,7 @@ const MonthlyPlanPage = () => {
                 </label>
               ) : (
                 <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
-                  Với lựa chọn này, app sẽ tự chia theo tỷ lệ chuẩn: 55% cần thiết, 10% cho 4 hũ
-                  tiếp theo, 5% cho từ thiện.
+                  App tự chia theo tỷ lệ chuẩn: 55% cần thiết, 10% cho 4 hũ tiếp theo và 5% từ thiện.
                 </div>
               )}
             </div>
@@ -566,33 +479,20 @@ const MonthlyPlanPage = () => {
         <article
           id="monthly-plan-allocation-board"
           data-assistant-target="monthly-plan-allocation-board"
-          ref={allocationFormRef}
           className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
         >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Allocation board
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
-                {editingAllocationId ? 'Chỉnh sửa phân bổ' : 'Tạo phân bổ mới'}
-              </h2>
-            </div>
-            {focusedIncome ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
-                Focus: {focusedIncome.month} · {formatCurrency(focusedIncome.total_amount || 0)}
-              </div>
-            ) : null}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+              Allocation board
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Phân bổ tự động hiện tại</h2>
           </div>
 
           <div className="mt-5 space-y-3">
             {focusedAllocations.length > 0 ? (
               focusedAllocations.map((item) => {
                 const progress = focusedIncomeTotal
-                  ? Math.min(
-                      100,
-                      Math.round(((item.allocated_amount || 0) / focusedIncomeTotal) * 100)
-                    )
+                  ? Math.min(100, Math.round(((item.allocated_amount || 0) / focusedIncomeTotal) * 100))
                   : item.allocation_percentage || 0;
 
                 return (
@@ -624,141 +524,8 @@ const MonthlyPlanPage = () => {
               </div>
             )}
           </div>
-
-          <form onSubmit={handleAllocationSubmit} className="mt-5 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  Thu nhập tháng
-                </span>
-                <select
-                  name="monthly_income_id"
-                  value={allocationForm.monthly_income_id}
-                  onChange={handleAllocationChange}
-                  required
-                  className="w-full bg-transparent text-sm text-white outline-none"
-                >
-                  <option value="">Chọn tháng thu nhập</option>
-                  {monthlyIncomeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  Hũ
-                </span>
-                <select
-                  name="jar_key"
-                  value={allocationForm.jar_key}
-                  onChange={handleAllocationChange}
-                  required
-                  className="w-full bg-transparent text-sm text-white outline-none"
-                >
-                  <option value="">Chọn hũ</option>
-                  {jars.map((jar) => (
-                    <option key={jar._id} value={jar.jar_key}>
-                      {jar.display_name_vi}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  Số tiền phân bổ
-                </span>
-                <input
-                  name="allocated_amount"
-                  type="number"
-                  value={allocationForm.allocated_amount}
-                  onChange={handleAllocationChange}
-                  required
-                  className="w-full bg-transparent text-sm text-white outline-none"
-                />
-              </label>
-
-              <label className="rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  Tỷ lệ phân bổ
-                </span>
-                <input
-                  name="allocation_percentage"
-                  type="number"
-                  value={allocationForm.allocation_percentage}
-                  onChange={handleAllocationChange}
-                  className="w-full bg-transparent text-sm text-white outline-none"
-                />
-              </label>
-            </div>
-
-            <label className="block rounded-3xl border border-white/10 bg-slate-950/35 px-4 py-3">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                Ghi chú
-              </span>
-              <input
-                name="note"
-                value={allocationForm.note}
-                onChange={handleAllocationChange}
-                className="w-full bg-transparent text-sm text-white outline-none"
-              />
-            </label>
-
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={resetAllocationForm}
-                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Làm mới form
-              </button>
-              <button
-                type="submit"
-                className="rounded-2xl bg-(--hero-gradient) px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:scale-[1.01]"
-              >
-                {editingAllocationId ? 'Lưu phân bổ' : 'Tạo phân bổ'}
-              </button>
-            </div>
-          </form>
         </article>
       </section>
-
-      {focusedIncome ? (
-        <section
-          id="monthly-plan-focus"
-          data-assistant-target="monthly-plan-focus"
-          className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
-        >
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Focus month
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">{focusedIncome.month}</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Ngày nhận: {formatDate(focusedIncome.income_date)} · Ghi chú: {focusedIncome.source_note || 'Không có'}
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-                <p className="text-slate-500">Thu nhập</p>
-                <p className="mt-1 font-semibold text-white">{formatCurrency(focusedIncomeTotal)}</p>
-              </div>
-              <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-                <p className="text-slate-500">Đã phân bổ</p>
-                <p className="mt-1 font-semibold text-white">{formatCurrency(allocatedTotal)}</p>
-              </div>
-              <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-                <p className="text-slate-500">Còn lại</p>
-                <p className="mt-1 font-semibold text-white">{formatCurrency(remainingAmount)}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
 
       <MonthlyIncomeTable
         items={monthlyIncomes}
@@ -766,11 +533,7 @@ const MonthlyPlanPage = () => {
         onDelete={handleDeleteIncome}
       />
 
-      <JarAllocationTable
-        items={jarAllocations}
-        onEdit={handleEditAllocation}
-        onDelete={handleDeleteAllocation}
-      />
+      <JarAllocationTable items={jarAllocations} />
     </div>
   );
 };

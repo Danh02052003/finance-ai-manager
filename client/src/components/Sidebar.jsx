@@ -2,12 +2,18 @@ import { NavLink } from 'react-router-dom';
 
 import { navigationItems } from '../config/navigation.js';
 
+const navGroups = [
+  { key: 'core', label: 'Core' },
+  { key: 'manage', label: 'Quản lý' },
+  { key: 'tools', label: 'Công cụ' }
+];
+
 const Sidebar = ({ isOpen, onClose }) => (
   <>
     <button
       type="button"
       onClick={onClose}
-      aria-label="Đóng điều hướng"
+      aria-label="Đóng menu điều hướng"
       className={[
         'fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm transition lg:hidden',
         isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
@@ -16,66 +22,79 @@ const Sidebar = ({ isOpen, onClose }) => (
 
     <aside
       className={[
-        'fixed inset-y-0 left-0 z-40 flex w-[250px] flex-col border-r border-white/10 bg-[rgba(15,15,35,0.95)] px-5 py-6 shadow-2xl shadow-black/30 backdrop-blur transition-transform duration-200',
+        'fixed inset-y-0 left-0 z-40 flex w-[250px] flex-col border-r border-white/8 bg-[rgba(15,15,35,0.98)] px-4 py-5 shadow-xl shadow-black/20 backdrop-blur transition-transform duration-200',
         isOpen ? 'translate-x-0' : '-translate-x-full',
         'lg:translate-x-0'
       ].join(' ')}
     >
-      <div className="mb-8">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/20 bg-indigo-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-200">
-          6 Hũ Tài Chính
+      <div className="border-b border-white/8 pb-4">
+        <div className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+          Finance AI
         </div>
-        <h1 className="text-xl font-semibold text-white">Quản lý tiền theo nhịp sống mỗi ngày</h1>
+        <h1 className="mt-3 text-lg font-semibold text-white">Quản lý 6 hũ gọn và rõ</h1>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Dark fintech dashboard lấy trọng tâm là nhập nhanh, nhìn rõ và dễ ra quyết định.
+          Tập trung vào số dư tháng, nhập tiêu nhanh và lịch sử theo ngày.
         </p>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-2">
-        {navigationItems.map((item) => {
-          const Icon = item.icon;
+      <nav className="mt-4 flex-1 overflow-y-auto">
+        <div className="space-y-5">
+          {navGroups.map((group) => {
+            const items = navigationItems.filter((item) => item.group === group.key);
 
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                [
-                  'group flex items-center gap-3 rounded-2xl border px-4 py-3 transition',
-                  isActive
-                    ? 'border-indigo-400/40 bg-[linear-gradient(135deg,rgba(99,102,241,0.18)_0%,rgba(79,70,229,0.14)_100%)] text-white shadow-lg shadow-indigo-950/30'
-                    : 'border-transparent bg-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white'
-                ].join(' ')
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    className={[
-                      'inline-flex h-10 w-10 items-center justify-center rounded-2xl transition',
-                      isActive ? 'bg-white/10 text-white' : 'bg-white/5 text-slate-300'
-                    ].join(' ')}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">{item.label}</span>
-                    <span
-                      className={[
-                        'block truncate text-xs',
-                        isActive ? 'text-indigo-100/85' : 'text-slate-500 group-hover:text-slate-400'
-                      ].join(' ')}
-                    >
-                      {item.title}
-                    </span>
-                  </span>
-                </>
-              )}
-            </NavLink>
-          );
-        })}
+            if (!items.length) {
+              return null;
+            }
+
+            return (
+              <section key={group.key}>
+                <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {group.label}
+                </p>
+                <div className="space-y-1.5">
+                  {items.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className={({ isActive }) =>
+                          [
+                            'group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition',
+                            isActive
+                              ? 'border-emerald-500/20 bg-emerald-500/10 text-white'
+                              : 'border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white'
+                          ].join(' ')
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <span
+                              className={[
+                                'inline-flex h-9 w-9 items-center justify-center rounded-xl transition',
+                                isActive ? 'bg-emerald-500/15 text-emerald-200' : 'bg-white/5 text-slate-400'
+                              ].join(' ')}
+                            >
+                              <Icon className="h-4.5 w-4.5" />
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-medium">{item.label}</span>
+                              <span className="block truncate text-xs text-slate-500">
+                                {item.title}
+                              </span>
+                            </span>
+                          </>
+                        )}
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </nav>
-
     </aside>
   </>
 );

@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { ChartPieIcon, SparklesIcon } from '@heroicons/react/24/outline';
-
 import {
-  getDashboard,
   getJarActualBalances,
   getJarAllocations,
   getJars,
@@ -105,7 +102,6 @@ const getMonthMetrics = (selectedMonth) => {
 const JarsPage = () => {
   const navigate = useNavigate();
   const [jars, setJars] = useState(defaultJars);
-  const [dashboardData, setDashboardData] = useState(null);
   const [monthlyIncomes, setMonthlyIncomes] = useState([]);
   const [jarAllocations, setJarAllocations] = useState([]);
   const [actualBalances, setActualBalances] = useState([]);
@@ -116,17 +112,9 @@ const JarsPage = () => {
   useEffect(() => {
     const loadJars = async () => {
       try {
-        const [
-          jarResponse,
-          dashboardResponse,
-          incomeResponse,
-          allocationResponse,
-          actualBalanceResponse,
-          transactionResponse
-        ] =
+        const [jarResponse, incomeResponse, allocationResponse, actualBalanceResponse, transactionResponse] =
           await Promise.all([
             getJars(),
-            getDashboard(),
             getMonthlyIncomes(),
             getJarAllocations(),
             getJarActualBalances(),
@@ -136,7 +124,6 @@ const JarsPage = () => {
         if (Array.isArray(jarResponse.data) && jarResponse.data.length > 0) {
           setJars(jarResponse.data);
         }
-        setDashboardData(dashboardResponse.data || null);
         const loadedIncomes = Array.isArray(incomeResponse.data) ? incomeResponse.data : [];
         const loadedAllocations = Array.isArray(allocationResponse.data) ? allocationResponse.data : [];
         const loadedActualBalances = Array.isArray(actualBalanceResponse.data)
@@ -164,10 +151,6 @@ const JarsPage = () => {
 
     loadJars();
   }, []);
-
-  const allocationMap = new Map(
-    (dashboardData?.latest_jar_allocations || []).map((item) => [item.jar_key, item])
-  );
   const availableMonths = useMemo(
     () =>
       Array.from(
@@ -216,7 +199,6 @@ const JarsPage = () => {
       sum + (item.direction === 'income_adjustment' && item.source === 'momo_yield' ? item.amount || 0 : 0),
     0
   );
-  const activeCount = jars.filter((jar) => jar.is_active).length;
   const selectedMonthIncome =
     monthlyIncomes.find((item) => item.month === selectedMonth)?.total_amount || 0;
   const selectedMonthLabel = selectedMonth || 'Chưa chọn tháng';
@@ -255,107 +237,38 @@ const JarsPage = () => {
       <section
         id="jars-overview"
         data-assistant-target="jars-overview"
-        className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"
+        className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
       >
-        <article className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.24)_0%,rgba(118,75,162,0.22)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-100/80">
-            Visual jars
-          </div>
-          <h1 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Mỗi hũ là một bucket có vai trò riêng trong kế hoạch tài chính của bạn.
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-            Màn này tập trung vào nhận diện từng hũ, mức phân bổ gần nhất và cảm giác tiến độ thay
-            vì chỉ hiển thị dạng danh sách thông thường.
-          </p>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-4">
-            <div className="rounded-3xl border border-white/10 bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Tổng hũ</p>
-              <p className="mt-2 text-3xl font-bold text-white">{jars.length}</p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Đang hoạt động</p>
-              <p className="mt-2 text-3xl font-bold text-white">{activeCount}</p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Phân bổ gần nhất</p>
-              <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(totalAllocation)}</p>
-            </div>
-              <label className="rounded-3xl border border-white/10 bg-white/10 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Tháng đang xem</p>
-                <select
-                  aria-label="Chọn tháng xem dashboard hũ"
-                  value={selectedMonth}
-                  onChange={(event) => setSelectedMonth(event.target.value)}
-                  className="mt-3 w-full bg-transparent text-base font-semibold text-white outline-none"
-                >
-                  {availableMonths.length > 0 ? (
-                    availableMonths.map((month) => (
-                      <option key={month} value={month}>
-                        {month}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Chưa có tháng</option>
-                  )}
-                </select>
-              </label>
-          </div>
-        </article>
-
-        <article className="rounded-[32px] border border-white/10 bg-(--surface-strong) p-6 shadow-xl shadow-slate-950/20">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Allocation mix
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Tóm tắt hiện tại</h2>
-            </div>
-            <span className="rounded-2xl bg-white/5 p-3 text-slate-300">
-              <ChartPieIcon className="h-5 w-5" />
-            </span>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            {jars.map((jar) => {
-              const allocation = allocationMap.get(jar.jar_key);
-              const percentage =
-                allocationByJar.get(jar.jar_key)?.allocation_percentage ??
-                allocation?.allocation_percentage ??
-                jar.target_percentage ??
-                0;
-
-              return (
-                <div key={jar.jar_key}>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-slate-300">{jar.display_name_vi}</span>
-                    <span className="text-slate-500">
-                      {typeof percentage === 'number' ? `${percentage}%` : 'Chưa đặt'}
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-white/5">
-                    <div
-                      className="h-2 rounded-full bg-(--hero-gradient)"
-                      style={{ width: `${Math.min(100, Math.max(8, percentage || 8))}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
-            <div className="flex items-center gap-2">
-              <SparklesIcon className="h-5 w-5" />
-              <span className="font-semibold">Gợi ý visual</span>
-            </div>
-            <p className="mt-2 leading-6">
-              Dashboard theo tháng đang xem: {selectedMonthLabel}. Bạn có thể bấm vào từng hũ để chi
-              trực tiếp hoặc mở lịch sử của đúng hũ đó.
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">6 hũ</p>
+            <h1 className="mt-2 text-2xl font-semibold text-white">Quản lý 6 hũ theo tháng đang xem</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+              Trang này chỉ giữ lại phần số liệu thật sự cần để xem hũ nào còn bao nhiêu, chi nhanh và
+              mở lịch sử đúng hũ đó.
             </p>
           </div>
-        </article>
+
+          <label className="rounded-3xl border border-white/10 bg-white/5 p-4 lg:min-w-[220px]">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Tháng đang xem</p>
+            <select
+              aria-label="Chọn tháng xem dashboard hũ"
+              value={selectedMonth}
+              onChange={(event) => setSelectedMonth(event.target.value)}
+              className="mt-3 w-full bg-transparent text-base font-semibold text-white outline-none"
+            >
+              {availableMonths.length > 0 ? (
+                availableMonths.map((month) => (
+                  <option key={month} value={month}>
+                    {month}
+                  </option>
+                ))
+              ) : (
+                <option value="">Chưa có tháng</option>
+              )}
+            </select>
+          </label>
+        </div>
       </section>
 
       <section
@@ -461,6 +374,8 @@ const JarsPage = () => {
               ? Math.ceil(overspendAmount / baseDailyRate)
               : 0;
           const previousActualBalance = previousActualBalanceMap.get(jar.jar_key)?.actual_balance_amount;
+          const currentMonthPercentage =
+            allocationByJar.get(jar.jar_key)?.allocation_percentage ?? jar.target_percentage;
 
           return (
             <JarCard
@@ -489,9 +404,7 @@ const JarsPage = () => {
                   : ''
               }
               percentage={
-                allocationByJar.get(jar.jar_key)?.allocation_percentage ??
-                allocation?.allocation_percentage ??
-                jar.target_percentage
+                currentMonthPercentage
               }
               deltaLabel={
                 allocationByJar.get(jar.jar_key)
