@@ -11,10 +11,10 @@ import {
 export const navigationItems = [
   {
     to: '/dashboard',
-    label: 'Dashboard',
-    shortLabel: 'Dash',
-    title: 'Tổng quan tháng hiện tại',
-    description: 'Xem 6 hũ, số dư tháng, giao dịch gần đây và các tín hiệu cần chú ý.',
+    label: 'Tổng quan',
+    shortLabel: 'Tổng quan',
+    title: 'Tổng quan tài chính',
+    description: 'Xem nhanh sức khoẻ tài chính tháng này: số dư, 6 hũ, và chi tiêu gần đây.',
     icon: HomeIcon,
     group: 'core',
     showInBottomNav: true
@@ -22,19 +22,19 @@ export const navigationItems = [
   {
     to: '/transactions',
     label: 'Giao dịch',
-    shortLabel: 'Tx',
-    title: 'Nhập tiêu và xem lịch sử',
-    description: 'Nhập nhanh chi tiêu hôm nay, lọc theo hũ, theo tháng và xem theo ngày.',
+    shortLabel: 'Giao dịch',
+    title: 'Sổ giao dịch',
+    description: 'Ghi chi tiêu, tìm lại lịch sử và theo dõi dòng tiền từng ngày.',
     icon: CreditCardIcon,
     group: 'core',
     showInBottomNav: true
   },
   {
     to: '/jars',
-    label: '6 hũ',
-    shortLabel: 'Hũ',
-    title: 'Chi tiết từng hũ',
-    description: 'Xem phân bổ, đã chi, còn lại và mức dùng gợi ý của từng hũ.',
+    label: '6 Hũ',
+    shortLabel: '6 Hũ',
+    title: 'Chi tiết 6 hũ',
+    description: 'Phân bổ, đã chi, còn lại và mức chi gợi ý cho từng hũ.',
     icon: BanknotesIcon,
     group: 'core',
     showInBottomNav: true
@@ -42,19 +42,19 @@ export const navigationItems = [
   {
     to: '/monthly-plan',
     label: 'Kế hoạch',
-    shortLabel: 'Plan',
-    title: 'Lập kế hoạch tháng',
-    description: 'Tạo thu nhập tháng và để app tự chia 6 hũ theo cấu hình chính.',
+    shortLabel: 'Kế hoạch',
+    title: 'Kế hoạch tháng',
+    description: 'Nhập thu nhập và để hệ thống tự phân bổ 6 hũ.',
     icon: CalendarDaysIcon,
     group: 'manage',
-    showInBottomNav: false
+    showInBottomNav: true
   },
   {
     to: '/debts',
-    label: 'Nợ giữa hũ',
+    label: 'Nợ nội bộ',
     shortLabel: 'Nợ',
-    title: 'Theo dõi nợ nội bộ',
-    description: 'Quản lý các khoản chi hộ hoặc tạm ứng giữa các hũ.',
+    title: 'Nợ giữa các hũ',
+    description: 'Theo dõi các khoản tạm ứng và hoàn trả giữa các hũ.',
     icon: ExclamationTriangleIcon,
     group: 'manage',
     showInBottomNav: false
@@ -62,19 +62,19 @@ export const navigationItems = [
   {
     to: '/actual-balances',
     label: 'Số dư thực',
-    shortLabel: 'Dư thực',
-    title: 'Snapshot số dư thực',
-    description: 'Lưu phần tiền còn giữ riêng theo tháng và quản lý phát sinh lãi.',
+    shortLabel: 'Số dư',
+    title: 'Số dư thực tế',
+    description: 'Lưu số tiền thực đang giữ, tách riêng khỏi ngân sách vận hành.',
     icon: CircleStackIcon,
     group: 'manage',
     showInBottomNav: false
   },
   {
     to: '/import',
-    label: 'Import',
-    shortLabel: 'Import',
-    title: 'Nhập dữ liệu từ Excel',
-    description: 'Upload workbook cũ, xem kết quả import và chạy AI phân loại lại giao dịch.',
+    label: 'Nhập dữ liệu',
+    shortLabel: 'Nhập',
+    title: 'Nhập từ Excel',
+    description: 'Đưa dữ liệu từ file Excel cũ vào hệ thống.',
     icon: ArrowDownTrayIcon,
     group: 'tools',
     showInBottomNav: false
@@ -83,7 +83,7 @@ export const navigationItems = [
 
 export const getPageMeta = (pathname) =>
   navigationItems.find((item) => pathname.startsWith(item.to)) || {
-    label: 'Finance AI Manager',
+    label: 'Quản lý tài chính',
     shortLabel: 'App',
     title: 'Finance AI Manager',
     description: 'Ứng dụng quản lý tài chính cá nhân theo mô hình 6 hũ.'

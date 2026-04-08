@@ -1,3 +1,4 @@
+import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import { useRef } from 'react';
 
 const Dropzone = ({ file, isUploading, onFileSelected }) => {
@@ -6,60 +7,46 @@ const Dropzone = ({ file, isUploading, onFileSelected }) => {
   const handleDrop = (event) => {
     event.preventDefault();
     const droppedFile = event.dataTransfer.files?.[0];
-
-    if (droppedFile) {
-      onFileSelected(droppedFile);
-    }
+    if (droppedFile) onFileSelected(droppedFile);
   };
 
-  const handleDragOver = (event) => {
-    event.preventDefault();
-  };
+  const handleDragOver = (event) => { event.preventDefault(); };
 
   const handleInputChange = (event) => {
     const selectedFile = event.target.files?.[0];
-
-    if (selectedFile) {
-      onFileSelected(selectedFile);
-    }
+    if (selectedFile) onFileSelected(selectedFile);
   };
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Tải file Excel</p>
-      <h3 className="mt-2 text-2xl font-semibold text-white">Kéo thả hoặc chọn file</h3>
+    <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
+      <h3 className="text-base font-semibold text-white">Chọn file Excel</h3>
       <div
-        className="mt-5 grid gap-3 rounded-[28px] border border-dashed border-indigo-300/30 bg-slate-950/35 px-6 py-10 text-center transition hover:border-indigo-300/50 hover:bg-white/5"
+        className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-dashed border-indigo-400/25 bg-white/[0.02] px-6 py-10 text-center transition hover:border-indigo-400/40 hover:bg-white/[0.04]"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => inputRef.current?.click()}
         role="button"
         tabIndex={0}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            inputRef.current?.click();
-          }
-        }}
+        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') inputRef.current?.click(); }}
       >
-        <p className="text-sm font-semibold text-white">Hỗ trợ file `.xlsx` và `.xls`</p>
-        <p className="text-sm leading-6 text-slate-400">
-          {file ? `Đã chọn: ${file.name}` : 'Kéo file vào đây hoặc bấm để chọn từ máy.'}
-        </p>
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10">
+          <ArrowUpTrayIcon className="h-6 w-6 text-indigo-400" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-white">
+            {file ? file.name : 'Kéo thả hoặc bấm để chọn'}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">Hỗ trợ .xlsx và .xls</p>
+        </div>
         <button
           type="button"
-          className="mx-auto inline-flex items-center justify-center rounded-2xl bg-(--hero-gradient) px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 disabled:opacity-50"
           disabled={isUploading}
         >
-          {isUploading ? 'Đang import...' : 'Chọn file Excel'}
+          {isUploading ? 'Đang xử lý...' : 'Chọn file'}
         </button>
       </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".xlsx,.xls"
-        className="hidden-input"
-        onChange={handleInputChange}
-      />
+      <input ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleInputChange} aria-label="Chọn file Excel" />
     </section>
   );
 };

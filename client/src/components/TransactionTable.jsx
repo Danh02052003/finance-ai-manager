@@ -64,7 +64,7 @@ const formatDayTitle = (dayKey) => {
 };
 
 const getAmountToneClass = (item) =>
-  item.direction === 'income_adjustment' ? 'text-emerald-300' : 'text-rose-300';
+  item.direction === 'income_adjustment' ? 'text-emerald-400' : 'text-rose-400';
 
 const getAmountPrefix = (item) => (item.direction === 'income_adjustment' ? '+' : '-');
 
@@ -74,7 +74,7 @@ const getSourceBadge = (item) => {
   }
 
   if (item.direction === 'income_adjustment') {
-    return 'Điều chỉnh tăng';
+    return 'Thu vào hũ';
   }
 
   return '';
@@ -117,54 +117,54 @@ const groupTransactionsByDay = (items) => {
 };
 
 const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelection, onEdit, onDelete }) => (
-  <div className="grid gap-3 rounded-2xl border border-white/6 bg-white/[0.03] p-3 md:grid-cols-[auto_88px_minmax(0,1fr)_170px_140px_auto] md:items-center md:gap-4">
-    <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+  <div className="grid gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] p-3 transition hover:bg-white/[0.04] md:grid-cols-[auto_80px_minmax(0,1fr)_auto_130px_auto] md:items-center md:gap-4">
+    <label className="inline-flex items-center gap-2 text-sm text-slate-400">
       <input
         aria-label={`Chọn giao dịch ${item.description || index + 1}`}
         type="checkbox"
         checked={selectedIds.includes(item._id)}
         onChange={() => onToggleSelection?.(item._id)}
-        className="h-4 w-4 rounded border-white/20 bg-transparent"
+        className="h-4 w-4 rounded border-white/20 bg-transparent accent-indigo-500"
       />
       <span className="md:hidden">{formatTime(item.transaction_date)}</span>
     </label>
 
-    <div className="hidden text-sm text-slate-400 md:block">{formatTime(item.transaction_date)}</div>
+    <div className="hidden text-xs tabular-nums text-slate-500 md:block">{formatTime(item.transaction_date)}</div>
 
     <div className="min-w-0">
       <div className="flex items-start justify-between gap-3 md:block">
-        <p className="truncate text-sm font-semibold text-white">{item.description || 'Không có mô tả'}</p>
-        <p className={`text-sm font-semibold md:hidden ${getAmountToneClass(item)}`}>
+        <p className="truncate text-sm font-medium text-white">{item.description || 'Không có mô tả'}</p>
+        <p className={`shrink-0 text-sm font-semibold tabular-nums md:hidden ${getAmountToneClass(item)}`}>
           {getAmountPrefix(item)}
           {typeof item.amount === 'number' ? formatCurrency(item.amount) : '-'}
         </p>
       </div>
-      {item.notes ? <p className="mt-1 line-clamp-2 text-xs text-slate-500">{item.notes}</p> : null}
+      {item.notes ? <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{item.notes}</p> : null}
     </div>
 
-    <div className="flex flex-wrap gap-2">
-      <span className="rounded-full bg-white/6 px-2.5 py-1 text-xs font-medium text-slate-300">
+    <div className="flex flex-wrap gap-1.5">
+      <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
         {jarNameByKey[item.jar_key] || item.jar_key || 'Không rõ hũ'}
       </span>
-      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">
+      <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
         {categoryLabels[item.category] || categoryLabels.uncategorized}
       </span>
       {getSourceBadge(item) ? (
-        <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-medium text-emerald-200">
+        <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
           {getSourceBadge(item)}
         </span>
       ) : null}
     </div>
 
-    <div className={`hidden text-right text-sm font-semibold md:block ${getAmountToneClass(item)}`}>
+    <div className={`hidden text-right text-sm font-semibold tabular-nums md:block ${getAmountToneClass(item)}`}>
       {getAmountPrefix(item)}
       {typeof item.amount === 'number' ? formatCurrency(item.amount) : '-'}
     </div>
 
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex items-center justify-end gap-1.5">
       <button
         type="button"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.08] hover:text-white"
         onClick={() => onEdit?.(item)}
         aria-label={`Sửa giao dịch ${item.description || index + 1}`}
       >
@@ -172,7 +172,7 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
       </button>
       <button
         type="button"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-400/20 bg-rose-400/10 text-rose-100 transition hover:bg-rose-400/15"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-400"
         onClick={() => onDelete?.(item)}
         aria-label={`Xóa giao dịch ${item.description || index + 1}`}
       >
@@ -201,37 +201,35 @@ const TransactionTable = ({
   const dayGroups = groupTransactionsByDay(items);
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-[rgba(26,26,46,0.88)] p-4 shadow-sm sm:p-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-            {eyebrow}
-          </p>
-          <h3 className="mt-2 text-2xl font-semibold text-white">{title}</h3>
-          {subtitle ? <p className="mt-1 text-sm text-slate-400">{subtitle}</p> : null}
+          <h3 className="text-base font-semibold text-white">{title}</h3>
+          {subtitle ? <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p> : null}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
           <button
             type="button"
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08] disabled:opacity-40"
             onClick={onToggleSelectAll}
             disabled={!items.length}
           >
-            {areAllVisibleSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+            {areAllVisibleSelected ? 'Bỏ chọn' : 'Chọn tất cả'}
           </button>
-          <button
-            type="button"
-            className="rounded-xl border border-rose-400/20 bg-rose-400/10 px-3 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-400/15 disabled:cursor-not-allowed disabled:opacity-50"
-            onClick={onDeleteSelected}
-            disabled={!selectedIds.length}
-          >
-            Xóa đã chọn ({selectedIds.length})
-          </button>
+          {selectedIds.length > 0 ? (
+            <button
+              type="button"
+              className="rounded-lg bg-rose-500/15 px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
+              onClick={onDeleteSelected}
+            >
+              Xóa {selectedIds.length} mục
+            </button>
+          ) : null}
         </div>
       </div>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-4 space-y-3">
         {dayGroups.length ? (
           dayGroups.map((group) => {
             const isHighlighted = highlightDate && group.dayKey === highlightDate;
@@ -241,38 +239,38 @@ const TransactionTable = ({
                 key={group.dayKey}
                 open={isHighlighted || dayGroups.length <= 3}
                 className={[
-                  'overflow-hidden rounded-2xl border bg-[#12182b]',
-                  isHighlighted ? 'border-emerald-400/40' : 'border-white/8'
+                  'overflow-hidden rounded-xl border',
+                  isHighlighted
+                    ? 'border-indigo-500/30 bg-indigo-500/[0.03]'
+                    : 'border-white/[0.06] bg-white/[0.02]'
                 ].join(' ')}
               >
-                <summary className="flex cursor-pointer list-none flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-white">{group.title}</p>
-                      {isHighlighted ? (
-                        <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-medium text-emerald-200">
-                          Đang xem
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {group.items.length} giao dịch · {formatDate(group.dayKey)}
-                    </p>
+                <summary className="flex cursor-pointer list-none flex-col gap-2 px-4 py-3 transition hover:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-white">{group.title}</p>
+                    <span className="text-xs text-slate-500">
+                      {group.items.length} giao dịch
+                    </span>
+                    {isHighlighted ? (
+                      <span className="rounded-md bg-indigo-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-300">
+                        Đang xem
+                      </span>
+                    ) : null}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="rounded-full bg-rose-400/10 px-3 py-1 font-medium text-rose-200">
-                      Chi {formatCurrency(group.expenseTotal)}
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md bg-rose-500/10 px-2 py-0.5 text-xs font-medium tabular-nums text-rose-300">
+                      -{formatCurrency(group.expenseTotal)}
                     </span>
                     {group.adjustmentTotal > 0 ? (
-                      <span className="rounded-full bg-emerald-400/10 px-3 py-1 font-medium text-emerald-200">
-                        + {formatCurrency(group.adjustmentTotal)}
+                      <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium tabular-nums text-emerald-300">
+                        +{formatCurrency(group.adjustmentTotal)}
                       </span>
                     ) : null}
                   </div>
                 </summary>
 
-                <div className="space-y-3 border-t border-white/6 p-3">
+                <div className="space-y-2 border-t border-white/[0.04] p-3">
                   {group.items.map((item, index) => (
                     <TransactionRow
                       key={item._id || `${item.description}-${index}`}
@@ -290,10 +288,10 @@ const TransactionTable = ({
             );
           })
         ) : (
-          <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-10 text-center">
-            <CheckCircleIcon className="mx-auto h-8 w-8 text-slate-500" />
-            <p className="mt-3 text-sm font-medium text-slate-200">Chưa có giao dịch khớp bộ lọc hiện tại.</p>
-            <p className="mt-1 text-sm text-slate-500">Thử bỏ bớt filter hoặc nhập giao dịch mới từ nút “Nhập hôm nay”.</p>
+          <div className="rounded-xl border border-dashed border-white/[0.08] px-4 py-10 text-center">
+            <CheckCircleIcon className="mx-auto h-7 w-7 text-slate-600" />
+            <p className="mt-2 text-sm text-slate-400">Không có giao dịch khớp bộ lọc.</p>
+            <p className="mt-1 text-xs text-slate-500">Thử bỏ bớt điều kiện lọc hoặc ghi thêm chi tiêu mới.</p>
           </div>
         )}
       </div>

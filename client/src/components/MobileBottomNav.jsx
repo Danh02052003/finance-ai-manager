@@ -2,12 +2,12 @@ import { NavLink } from 'react-router-dom';
 
 import { navigationItems } from '../config/navigation.js';
 
-const coreItems = navigationItems.filter((item) => item.showInBottomNav);
+const bottomItems = navigationItems.filter((item) => item.showInBottomNav);
 
 const MobileBottomNav = () => (
-  <nav className="fixed inset-x-4 bottom-4 z-40 rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-lg shadow-black/20 backdrop-blur lg:hidden">
-    <div className="grid grid-cols-3 gap-1.5">
-      {coreItems.map((item) => {
+  <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-[rgba(10,10,26,0.95)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+    <div className="mx-auto grid max-w-lg grid-cols-4 px-2 py-1.5">
+      {bottomItems.map((item) => {
         const Icon = item.icon;
 
         return (
@@ -16,15 +16,24 @@ const MobileBottomNav = () => (
             to={item.to}
             className={({ isActive }) =>
               [
-                'flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition',
+                'flex flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors',
                 isActive
-                  ? 'bg-emerald-500/15 text-white'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  ? 'text-indigo-400'
+                  : 'text-slate-500 active:text-slate-300'
               ].join(' ')
             }
           >
-            <Icon className="h-5 w-5" />
-            <span>{item.shortLabel || item.label}</span>
+            {({ isActive }) => (
+              <>
+                <span className={isActive ? 'relative' : ''}>
+                  <Icon className="h-5 w-5" />
+                  {isActive ? (
+                    <span className="absolute -bottom-1 left-1/2 h-0.5 w-3 -translate-x-1/2 rounded-full bg-indigo-400" />
+                  ) : null}
+                </span>
+                <span className="mt-0.5">{item.shortLabel}</span>
+              </>
+            )}
           </NavLink>
         );
       })}

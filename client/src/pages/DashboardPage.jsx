@@ -1,5 +1,4 @@
 import {
-  ArrowDownTrayIcon,
   ArrowTrendingUpIcon,
   CalendarDaysIcon,
   PlusIcon
@@ -103,7 +102,7 @@ const DashboardPage = () => {
         );
         setError('');
       } catch (requestError) {
-        setError('Không tải được dashboard. Hãy thử lại sau.');
+        setError('Không tải được dữ liệu. Vui lòng thử lại.');
       }
     };
 
@@ -217,14 +216,7 @@ const DashboardPage = () => {
 
   const overspentJarCount = jarCards.filter((item) => item.remainingAmount < 0).length;
   const openDebtCount = dashboardData?.stats?.open_debt_count || 0;
-  const allocationCompletion = selectedMonthIncome
-    ? Math.round((totalAllocated / selectedMonthIncome) * 100)
-    : 0;
-  const insightBadges = [
-    `${allocationCompletion || 0}% budget đã phân bổ`,
-    overspentJarCount > 0 ? `${overspentJarCount} hũ đang vượt mức` : 'Các hũ đang trong ngưỡng',
-    openDebtCount > 0 ? `${openDebtCount} khoản nợ cần theo dõi` : 'Không có nợ mở'
-  ];
+  const spentPercentage = totalAllocated > 0 ? Math.round((totalSpent / totalAllocated) * 100) : 0;
 
   const handleOpenQuickAdd = () => {
     const params = new URLSearchParams({ quickAdd: '1', month: selectedMonth });
@@ -244,182 +236,176 @@ const DashboardPage = () => {
   const hasBudgetData = selectedMonthIncome > 0 || totalAllocated > 0 || totalSpent > 0;
 
   return (
-    <div className="space-y-5">
-      <section
-        id="dashboard-home"
-        data-assistant-target="dashboard-home"
-        className="rounded-2xl border border-white/8 bg-(--surface-strong) p-4 shadow-sm"
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Dashboard
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200">
-                <CalendarDaysIcon className="h-4 w-4 text-slate-400" />
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(event) => setSelectedMonth(event.target.value)}
-                  className="bg-transparent outline-none"
-                />
-              </label>
-              <Link
-                to="/monthly-plan"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10"
-              >
-                <CalendarDaysIcon className="h-4 w-4" />
-                <span>Plan tháng</span>
-              </Link>
-            </div>
+    <div className="space-y-6" id="dashboard-home" data-assistant-target="dashboard-home">
+      {error ? (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          {error}
+        </div>
+      ) : null}
+
+      <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-slate-300">
+              <CalendarDaysIcon className="h-4 w-4 text-slate-500" />
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(event) => setSelectedMonth(event.target.value)}
+                className="bg-transparent outline-none"
+              />
+            </label>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
+            <Link
+              to="/monthly-plan"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.08]"
+            >
+              <CalendarDaysIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Kế hoạch tháng</span>
+            </Link>
             <button
               type="button"
               onClick={handleOpenQuickAdd}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400"
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400"
             >
               <PlusIcon className="h-4 w-4" />
-              <span>Nhập tiêu hôm nay</span>
+              <span>Ghi chi tiêu</span>
             </button>
-            <Link
-              to="/import"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/10"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4" />
-              <span>Import</span>
-            </Link>
           </div>
         </div>
+      </section>
 
-        {error ? (
-          <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-            {error}
+      {hasBudgetData ? (
+        <>
+          <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
+            <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5 sm:p-6">
+              <p className="text-sm text-slate-500">Tổng dư tháng {selectedMonth}</p>
+              <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+                {formatCurrency(totalRemaining)}
+              </h1>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="rounded-lg bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-slate-400">
+                  Thu nhập {formatCurrency(selectedMonthIncome)}
+                </span>
+                <span className="rounded-lg bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-slate-400">
+                  Đã chi {spentPercentage}% ngân sách
+                </span>
+                {overspentJarCount > 0 ? (
+                  <span className="rounded-lg bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-rose-300">
+                    {overspentJarCount} hũ vượt mức
+                  </span>
+                ) : (
+                  <span className="rounded-lg bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                    Các hũ trong ngưỡng
+                  </span>
+                )}
+                {openDebtCount > 0 ? (
+                  <span className="rounded-lg bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-300">
+                    {openDebtCount} nợ đang mở
+                  </span>
+                ) : null}
+              </div>
+            </section>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <article className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+                  Phân bổ tháng
+                </p>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-white">{formatCurrency(totalAllocated)}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  từ thu nhập {formatCurrency(selectedMonthIncome)}
+                </p>
+              </article>
+              <article className="rounded-2xl border border-sky-500/15 bg-sky-500/[0.06] p-5">
+                <p className="text-xs font-medium uppercase tracking-wider text-sky-400/70">
+                  Giữ riêng
+                </p>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-white">
+                  {previousReserveMonth ? formatCurrency(reserveTotal) : '--'}
+                </p>
+                <p className="mt-1 text-xs text-sky-400/70">
+                  {previousReserveMonth ? `từ tháng ${previousReserveMonth}` : 'Chưa có dữ liệu'}
+                </p>
+              </article>
+            </div>
           </div>
-        ) : null}
 
-        {hasBudgetData ? (
-          <>
-            <div className="mt-5 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {jarCards.map((item) => (
+              <JarCardMini
+                key={item.jar.jar_key}
+                jar={item.jar}
+                remainingAmount={item.remainingAmount}
+                allocatedAmount={item.allocatedAmount}
+                spentAmount={item.spentAmount}
+                adjustmentAmount={item.adjustmentAmount}
+                reserveAmount={item.reserveAmount}
+                onClick={handleOpenJarHistory}
+              />
+            ))}
+          </section>
+
+          <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm text-slate-400">Tổng dư tháng {selectedMonth}</p>
-                <h1 className="mt-2 text-4xl font-bold tracking-tight text-emerald-400 sm:text-5xl">
-                  {formatCurrency(totalRemaining)}
-                </h1>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {insightBadges.map((badge) => (
-                    <span
-                      key={badge}
-                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300"
-                    >
-                      {badge}
-                    </span>
-                  ))}
-                </div>
+                <h2 className="text-base font-semibold text-white">Hoạt động gần đây</h2>
+                <p className="mt-0.5 text-xs text-slate-500">Chi tiêu 7 ngày qua</p>
               </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <article className="rounded-2xl border border-white/8 bg-white/5 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Phân bổ tháng
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{formatCurrency(totalAllocated)}</p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Thu nhập {formatCurrency(selectedMonthIncome)}
-                  </p>
-                </article>
-                <article className="rounded-2xl border border-sky-400/15 bg-sky-400/8 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-100/70">
-                    Dư thực giữ riêng
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-white">
-                    {previousReserveMonth ? formatCurrency(reserveTotal) : '--'}
-                  </p>
-                  <p className="mt-1 text-sm text-sky-100/70">
-                    {previousReserveMonth ? `Snapshot ${previousReserveMonth}` : 'Chưa có snapshot tháng trước'}
-                  </p>
-                </article>
-              </div>
+              <Link
+                to={`/transactions?month=${selectedMonth}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08]"
+              >
+                <ArrowTrendingUpIcon className="h-3.5 w-3.5" />
+                Xem tất cả
+              </Link>
             </div>
 
-            <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {jarCards.map((item) => (
-                <JarCardMini
-                  key={item.jar.jar_key}
-                  jar={item.jar}
-                  remainingAmount={item.remainingAmount}
-                  allocatedAmount={item.allocatedAmount}
-                  spentAmount={item.spentAmount}
-                  adjustmentAmount={item.adjustmentAmount}
-                  reserveAmount={item.reserveAmount}
-                  onClick={handleOpenJarHistory}
-                />
-              ))}
-            </section>
-
-            <section className="mt-5 rounded-2xl border border-white/8 bg-white/5 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    7 ngày gần đây
-                  </p>
-                  <h2 className="mt-1 text-lg font-semibold text-white">Lịch sử theo ngày</h2>
-                </div>
-                <Link
-                  to={`/transactions?month=${selectedMonth}`}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10"
-                >
-                  <ArrowTrendingUpIcon className="h-4 w-4" />
-                  <span>Xem tất cả</span>
-                </Link>
-              </div>
-
-              {recentDayCards.length > 0 ? (
-                <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
-                  {recentDayCards.map((day) => (
-                    <button
-                      key={day.date}
-                      type="button"
-                      onClick={() => handleOpenDayHistory(day)}
-                      className="min-w-[220px] rounded-2xl border border-white/8 bg-(--surface-strong) p-4 text-left shadow-sm transition hover:border-white/14 hover:bg-white/5"
-                    >
+            {recentDayCards.length > 0 ? (
+              <div className="mt-4 flex gap-3 overflow-x-auto pb-1 scrollbar-none">
+                {recentDayCards.map((day) => (
+                  <button
+                    key={day.date}
+                    type="button"
+                    onClick={() => handleOpenDayHistory(day)}
+                    className="min-w-[200px] shrink-0 rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 text-left transition hover:border-white/[0.12] hover:bg-white/[0.06]"
+                  >
+                    <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-white">{day.title}</p>
-                      <p className="mt-1 text-xs text-slate-500">{day.subtitle}</p>
-                      <p className="mt-4 text-2xl font-bold text-rose-300">{formatCurrency(day.total)}</p>
-                      <p className="mt-2 text-sm text-slate-400">
-                        {day.count} giao dịch · top {day.topCategory}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-4 rounded-xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-400">
-                  Tháng này chưa có giao dịch nào để hiển thị lịch sử gần đây.
-                </div>
-              )}
-            </section>
-          </>
-        ) : (
-          <div className="mt-5 rounded-2xl border border-dashed border-white/10 bg-white/5 p-8 text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Empty state
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold text-white">Nhập thu nhập tháng để bắt đầu</h2>
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-7 text-slate-400">
-              Khi có kế hoạch tháng, dashboard sẽ hiển thị 6 hũ, số dư tháng và lịch sử giao dịch gần đây ngay lập tức.
-            </p>
-            <Link
-              to="/monthly-plan"
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400"
-            >
-              <CalendarDaysIcon className="h-4 w-4" />
-              <span>Tạo kế hoạch tháng</span>
-            </Link>
+                      <span className="text-[11px] text-slate-500">{day.count} giao dịch</span>
+                    </div>
+                    <p className="mt-3 text-xl font-bold tabular-nums text-rose-300">{formatCurrency(day.total)}</p>
+                    <p className="mt-1 text-xs text-slate-500">{day.topCategory}</p>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-dashed border-white/[0.08] px-4 py-8 text-center">
+                <p className="text-sm text-slate-500">Chưa có giao dịch nào trong tháng này.</p>
+              </div>
+            )}
+          </section>
+        </>
+      ) : (
+        <section className="rounded-2xl border border-dashed border-white/[0.1] bg-(--surface-strong) p-10 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/10">
+            <CalendarDaysIcon className="h-8 w-8 text-indigo-400" />
           </div>
-        )}
-      </section>
+          <h2 className="mt-5 text-xl font-bold text-white">Bắt đầu với kế hoạch tháng</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
+            Nhập thu nhập tháng để hệ thống tự phân bổ 6 hũ. Dashboard sẽ hiển thị số dư, tiến độ chi tiêu và lịch sử giao dịch ngay lập tức.
+          </p>
+          <Link
+            to="/monthly-plan"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400"
+          >
+            <CalendarDaysIcon className="h-4 w-4" />
+            Tạo kế hoạch tháng
+          </Link>
+        </section>
+      )}
     </div>
   );
 };

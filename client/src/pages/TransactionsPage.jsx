@@ -26,13 +26,14 @@ const createDefaultForm = (month = currentMonth(), jar = 'essentials') => ({
   transaction_date: dateForMonth(month),
   amount: '',
   jar_key: jar,
+  direction: 'expense',
   category: '',
   description: '',
   notes: ''
 });
 
 const categoryOptions = [
-  { value: '', label: 'Để AI phân tích sau' },
+  { value: '', label: 'Để AI phân loại' },
   { value: 'food_drink', label: 'Ăn uống' },
   { value: 'bills', label: 'Hóa đơn' },
   { value: 'investment', label: 'Đầu tư' },
@@ -79,6 +80,7 @@ const parseAmountSearchValue = (value) => {
 };
 
 const amountForForm = (amount) => (typeof amount === 'number' && !Number.isNaN(amount) ? String(amount / 1000) : '');
+const isIncomeDirection = (value) => value === 'income_adjustment';
 
 const TransactionsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -92,7 +94,7 @@ const TransactionsPage = () => {
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
   const [selectedMonthFilter, setSelectedMonthFilter] = useState('');
   const [selectedDateFilter, setSelectedDateFilter] = useState('');
-  const [message, setMessage] = useState('Sẵn sàng ghi nhận giao dịch mới.');
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,10 +150,9 @@ const TransactionsPage = () => {
       setTransactions(loadedTransactions);
       setJars(Array.isArray(jarResponse.data) ? jarResponse.data : []);
       setSelectedIds((current) => current.filter((id) => loadedTransactions.some((item) => item._id === id)));
-      setMessage(transactionResponse.message || 'Đã đồng bộ dữ liệu giao dịch.');
       setError('');
     } catch {
-      setError('Không tải được danh sách giao dịch từ backend.');
+      setError('Không tải được danh sách giao dịch.');
     } finally {
       setIsLoading(false);
     }
@@ -183,7 +184,10 @@ const TransactionsPage = () => {
 
     if (quickAdd) {
       const targetMonth = dateFromQuery?.slice(0, 7) || monthFromQuery || selectedMonthFilter || currentMonth();
-      setForm(createDefaultForm(targetMonth, jarFromQuery || 'essentials'));
+      setForm({
+        ...createDefaultForm(targetMonth, jarFromQuery || 'essentials'),
+        direction: 'expense'
+      });
       if (dateFromQuery) {
         setForm((current) => ({ ...current, transaction_date: dateFromQuery }));
       }
@@ -199,13 +203,20 @@ const TransactionsPage = () => {
     setSearchParams(nextParams, { replace: true });
   };
 
-  const resetForm = (month = selectedMonthFilter || currentMonth(), jar = selectedJarFilter || 'essentials') => {
-    setForm(createDefaultForm(month, jar));
+  const resetForm = (
+    month = selectedMonthFilter || currentMonth(),
+    jar = selectedJarFilter || 'essentials',
+    direction = 'expense'
+  ) => {
+    setForm({
+      ...createDefaultForm(month, jar),
+      direction
+    });
     setEditingId('');
   };
 
-  const openCreateModal = () => {
-    resetForm();
+  const openCreateModal = (direction = 'expense') => {
+    resetForm(selectedMonthFilter || currentMonth(), selectedJarFilter || 'essentials', direction);
     setIsEditorOpen(true);
     clearQuickAddQuery();
   };
@@ -232,8 +243,8 @@ const TransactionsPage = () => {
       transaction_date: form.transaction_date,
       amount: form.amount,
       jar_key: form.jar_key || 'essentials',
-      direction: 'expense',
-      category: form.category || 'uncategorized',
+      direction: form.direction || 'expense',
+      category: isIncomeDirection(form.direction) ? 'uncategorized' : form.category || 'uncategorized',
       description: form.description,
       notes: form.notes
     };
@@ -241,10 +252,12 @@ const TransactionsPage = () => {
     try {
       if (editingId) {
         await updateTransaction(editingId, payload);
-        setMessage('Đã cập nhật giao dịch.');
+        setMessage(isIncomeDirection(payload.direction) ? 'Đã cập nhật khoản thu.' : 'Đã cập nhật giao dịch.');
       } else {
         await createTransaction(payload);
-        setMessage('Lưu giao dịch hôm nay thành công.');
+        setMessage(
+          isIncomeDirection(payload.direction) ? 'Đã ghi nhận khoản thu vào hũ.' : 'Đã lưu chi tiêu.'
+        );
       }
 
       closeEditor();
@@ -262,6 +275,7 @@ const TransactionsPage = () => {
       transaction_date: transaction.transaction_date?.slice(0, 10) || todayString(),
       amount: amountForForm(transaction.amount),
       jar_key: transaction.jar_key || 'essentials',
+      direction: transaction.direction || 'expense',
       category: transaction.category === 'uncategorized' ? '' : transaction.category || '',
       description: transaction.description || '',
       notes: transaction.notes || ''
@@ -270,7 +284,7 @@ const TransactionsPage = () => {
   };
 
   const handleDelete = async (transaction) => {
-    if (!window.confirm('Bạn có chắc muốn xóa giao dịch này?')) return;
+    if (!window.confirm('Xóa giao dịch này?')) return;
     try {
       await deleteTransaction(transaction._id);
       if (editingId === transaction._id) closeEditor();
@@ -296,7 +310,7 @@ const TransactionsPage = () => {
   };
 
   const handleDeleteSelected = async () => {
-    if (!selectedIds.length || !window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} giao dịch đã chọn?`)) return;
+    if (!selectedIds.length || !window.confirm(`Xóa ${selectedIds.length} giao dịch đã chọn?`)) return;
     try {
       await Promise.all(selectedIds.map((transactionId) => deleteTransaction(transactionId)));
       if (editingId && selectedIds.includes(editingId)) closeEditor();
@@ -316,68 +330,66 @@ const TransactionsPage = () => {
     setSelectedMonthFilter(availableMonthFilters[0] || currentMonth());
   };
 
+  const hasActiveFilters = searchTerm || selectedJarFilter || selectedCategoryFilter || selectedDateFilter;
+
   return (
     <div className="space-y-4">
-      {error ? <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">{error}</div> : null}
+      {error ? <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{error}</div> : null}
+      {!error && message ? <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{message}</div> : null}
 
-      {!error && message ? (
-        <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-slate-300">{message}</div>
-      ) : null}
-
-      <section className="rounded-3xl border border-white/10 bg-[rgba(26,26,46,0.88)] p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Filters</p>
-            <h2 className="mt-2 text-xl font-semibold text-white">Tìm nhanh theo tiền, hũ, ngày hoặc mô tả</h2>
-          </div>
+      <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-base font-semibold text-white">Bộ lọc & tìm kiếm</h2>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={clearFilters} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10">Xóa filter</button>
-            <button type="button" onClick={openCreateModal} className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400"><PlusIcon className="h-4 w-4" />Nhập hôm nay</button>
+            {hasActiveFilters ? (
+              <button type="button" onClick={clearFilters} className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08]">Xoá bộ lọc</button>
+            ) : null}
+            <button type="button" onClick={() => openCreateModal('expense')} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-400"><PlusIcon className="h-3.5 w-3.5" />Chi từ hũ</button>
+            <button type="button" onClick={() => openCreateModal('income_adjustment')} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-400"><PlusIcon className="h-3.5 w-3.5" />Thu vào hũ</button>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 xl:grid-cols-[1.4fr_repeat(4,minmax(0,1fr))]">
-          <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-            <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500"><MagnifyingGlassIcon className="h-4 w-4" />Search</span>
-            <input aria-label="Tìm kiếm giao dịch" name="searchTerm" type="text" placeholder="74k, cafe, momo yield" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" />
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
+          <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+            <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500"><MagnifyingGlassIcon className="h-3.5 w-3.5" />Tìm kiếm</span>
+            <input aria-label="Tìm kiếm giao dịch" name="searchTerm" type="text" placeholder="74k, cafe, trả tiền..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
           </label>
 
-          <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-            <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500"><FunnelIcon className="h-4 w-4" />Tháng</span>
+          <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+            <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500"><FunnelIcon className="h-3.5 w-3.5" />Tháng</span>
             <select value={selectedMonthFilter} onChange={(event) => setSelectedMonthFilter(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none">
-              <option value="">Tất cả tháng</option>
+              <option value="">Tất cả</option>
               {availableMonthFilters.map((month) => <option key={month} value={month}>{month}</option>)}
             </select>
           </label>
 
-          <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Hũ</span>
+          <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Hũ</span>
             <select value={selectedJarFilter} onChange={(event) => setSelectedJarFilter(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none">
               <option value="">Tất cả hũ</option>
               {availableJars.map((jar) => <option key={jar._id} value={jar.jar_key}>{jar.display_name_vi}</option>)}
             </select>
           </label>
 
-          <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Category</span>
+          <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Danh mục</span>
             <select value={selectedCategoryFilter} onChange={(event) => setSelectedCategoryFilter(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none">
-              <option value="">Tất cả nhóm</option>
+              <option value="">Tất cả</option>
               {categoryOptions.map((option) => <option key={option.label} value={option.value || 'uncategorized'}>{option.label}</option>)}
             </select>
           </label>
 
-          <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Ngày cụ thể</span>
-            <input aria-label="Lọc theo ngày cụ thể" type="date" value={selectedDateFilter} onChange={(event) => { setSelectedDateFilter(event.target.value); if (event.target.value) setSelectedMonthFilter(event.target.value.slice(0, 7)); }} className="w-full bg-transparent text-sm text-white outline-none" />
+          <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ngày</span>
+            <input aria-label="Lọc theo ngày" type="date" value={selectedDateFilter} onChange={(event) => { setSelectedDateFilter(event.target.value); if (event.target.value) setSelectedMonthFilter(event.target.value.slice(0, 7)); }} className="w-full bg-transparent text-sm text-white outline-none" />
           </label>
         </div>
       </section>
 
       <TransactionTable
         items={filteredTransactions}
-        eyebrow={selectedJarFilter ? 'Lịch sử theo hũ' : 'Lịch sử theo ngày'}
-        title={selectedJarName ? `${selectedJarName} · ${selectedMonthFilter || 'tất cả tháng'}` : 'Giao dịch gần đây'}
-        subtitle={selectedDateFilter ? `Đang khóa theo ngày ${selectedDateFilter}` : 'Accordion theo ngày để xem nhanh lịch sử và thao tác sửa/xóa.'}
+        title={selectedJarName ? `${selectedJarName} · ${selectedMonthFilter || 'tất cả'}` : 'Giao dịch gần đây'}
+        subtitle={selectedDateFilter ? `Lọc theo ngày ${selectedDateFilter}` : ''}
         jarNameByKey={jarNameByKey}
         selectedIds={selectedIds}
         highlightDate={selectedDateFilter}
@@ -388,74 +400,116 @@ const TransactionsPage = () => {
         onDelete={handleDelete}
       />
 
-      <button type="button" onClick={openCreateModal} className="fixed bottom-24 right-4 z-20 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/40 transition hover:bg-emerald-400 lg:hidden">
-        <PlusIcon className="h-5 w-5" />Nhập hôm nay
-      </button>
-
       {isEditorOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-4 backdrop-blur sm:items-center">
-          <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/10 bg-[#111428] shadow-2xl shadow-black/40">
-            <div className="flex items-center justify-between border-b border-white/8 px-5 py-4 sm:px-6">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{editingId ? 'Edit transaction' : 'Quick transaction'}</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">{editingId ? 'Chỉnh sửa giao dịch' : 'Nhập chi tiêu hôm nay'}</h2>
-              </div>
-              <button type="button" onClick={closeEditor} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10" aria-label="Đóng form giao dịch"><XMarkIcon className="h-5 w-5" /></button>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d20] shadow-2xl shadow-black/50">
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+              <h2 className="text-base font-semibold text-white">
+                {editingId
+                  ? isIncomeDirection(form.direction)
+                    ? 'Chỉnh sửa khoản thu'
+                    : 'Chỉnh sửa giao dịch'
+                  : isIncomeDirection(form.direction)
+                    ? 'Thu vào hũ'
+                    : 'Ghi chi tiêu'}
+              </h2>
+              <button type="button" onClick={closeEditor} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.08] hover:text-white" aria-label="Đóng"><XMarkIcon className="h-5 w-5" /></button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5 sm:px-6 sm:py-6">
+            <form onSubmit={handleSubmit} className="space-y-4 p-5">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm((current) => ({ ...current, direction: 'expense' }))}
+                  className={[
+                    'flex-1 rounded-lg py-2 text-sm font-medium transition',
+                    !isIncomeDirection(form.direction)
+                      ? 'bg-rose-500 text-white'
+                      : 'border border-white/[0.08] text-slate-400 hover:text-white'
+                  ].join(' ')}
+                >
+                  Chi từ hũ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm((current) => ({ ...current, direction: 'income_adjustment', category: '' }))}
+                  className={[
+                    'flex-1 rounded-lg py-2 text-sm font-medium transition',
+                    isIncomeDirection(form.direction)
+                      ? 'bg-emerald-500 text-white'
+                      : 'border border-white/[0.08] text-slate-400 hover:text-white'
+                  ].join(' ')}
+                >
+                  Thu vào hũ
+                </button>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Ngày</span>
+                <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ngày</span>
                   <input aria-label="Ngày giao dịch" name="transaction_date" type="date" value={form.transaction_date} onChange={handleChange} required className="w-full bg-transparent text-sm text-white outline-none" />
                 </label>
-                <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Số tiền</span>
-                  <input aria-label="Số tiền giao dịch" name="amount" type="number" min="0" step="0.1" value={form.amount} onChange={handleChange} required autoFocus className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" />
-                  <p className="mt-2 text-xs text-slate-500">Nhập theo nghìn đồng. Ví dụ `100` = `100.000đ`.</p>
+                <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Số tiền (nghìn đồng)</span>
+                  <input aria-label="Số tiền" name="amount" type="number" min="0" step="0.1" value={form.amount} onChange={handleChange} required autoFocus placeholder="VD: 100 = 100.000đ" className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
                 </label>
-                <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Hũ</span>
+                <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Hũ</span>
                   <select name="jar_key" value={form.jar_key} onChange={handleChange} required className="w-full bg-transparent text-sm text-white outline-none">
                     {availableJars.map((jar) => <option key={jar._id} value={jar.jar_key}>{jar.display_name_vi}</option>)}
                   </select>
                 </label>
-                <label className="rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Mô tả</span>
-                  <input aria-label="Mô tả giao dịch" name="description" value={form.description} onChange={handleChange} required className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" />
+                <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Mô tả</span>
+                  <input aria-label="Mô tả" name="description" value={form.description} onChange={handleChange} required placeholder={isIncomeDirection(form.direction) ? 'VD: Bạn trả lại 65k' : 'VD: Cafe sáng'} className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
                 </label>
               </div>
 
-              <div className="rounded-2xl border border-white/8 bg-[#12182b] p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Category</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {categoryOptions.map((option) => {
-                    const optionValue = option.value || '';
-                    const isActive = form.category === optionValue;
-                    return (
-                      <button key={option.label} type="button" onClick={() => setForm((current) => ({ ...current, category: optionValue }))} className={[ 'rounded-full px-3 py-1.5 text-sm font-medium transition', isActive ? 'bg-white text-slate-950' : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' ].join(' ')}>
-                        {option.label}
-                      </button>
-                    );
-                  })}
+              {!isIncomeDirection(form.direction) ? (
+                <div>
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">Danh mục</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {categoryOptions.map((option) => {
+                      const optionValue = option.value || '';
+                      const isActive = form.category === optionValue;
+                      return (
+                        <button key={option.label} type="button" onClick={() => setForm((current) => ({ ...current, category: optionValue }))} className={['rounded-lg px-3 py-1.5 text-xs font-medium transition', isActive ? 'bg-indigo-500 text-white' : 'border border-white/[0.08] text-slate-400 hover:text-white'].join(' ')}>
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] px-4 py-3 text-sm text-emerald-300">
+                  Khoản này sẽ được cộng trực tiếp vào hũ bạn chọn.
+                </div>
+              )}
 
-              <label className="block rounded-2xl border border-white/8 bg-[#12182b] px-4 py-3">
-                <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Ghi chú</span>
-                <textarea name="notes" value={form.notes} onChange={handleChange} rows="3" className="w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-slate-500" />
+              <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ghi chú</span>
+                <textarea name="notes" value={form.notes} onChange={handleChange} rows="2" className="w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
               </label>
 
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button type="button" onClick={closeEditor} className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">Hủy</button>
-                <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400"><PencilSquareIcon className="h-5 w-5" />{editingId ? 'Lưu thay đổi' : 'Lưu giao dịch'}</button>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={closeEditor} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.06]">Huỷ</button>
+                <button type="submit" className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition ${isIncomeDirection(form.direction) ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-indigo-500 hover:bg-indigo-400'}`}><PencilSquareIcon className="h-4 w-4" />{editingId ? 'Cập nhật' : 'Lưu'}</button>
               </div>
             </form>
           </div>
         </div>
       ) : null}
 
-      {isLoading ? <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-slate-400">Đang tải giao dịch...</div> : null}
+      <div className="fixed bottom-20 right-4 z-20 flex flex-col gap-2 lg:hidden">
+        <button type="button" onClick={() => openCreateModal('income_adjustment')} className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-400">
+          <PlusIcon className="h-4 w-4" />Thu vào hũ
+        </button>
+        <button type="button" onClick={() => openCreateModal('expense')} className="inline-flex items-center gap-2 rounded-full bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/30 transition hover:bg-rose-400">
+          <PlusIcon className="h-4 w-4" />Chi từ hũ
+        </button>
+      </div>
+
+      {isLoading ? <div className="rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-slate-500">Đang tải...</div> : null}
     </div>
   );
 };

@@ -18,7 +18,7 @@ const ImportExcel = () => {
 
   const handleFileSelected = (selectedFile) => {
     if (!selectedFile.name.match(/\.(xlsx|xls)$/i)) {
-      setError('Chỉ hỗ trợ file Excel .xlsx hoặc .xls.');
+      setError('Chỉ hỗ trợ file .xlsx hoặc .xls.');
       setFile(null);
       return;
     }
@@ -30,7 +30,7 @@ const ImportExcel = () => {
 
   const handleSubmit = async () => {
     if (!file) {
-      setError('Hãy chọn một file Excel trước khi import.');
+      setError('Chọn file Excel trước.');
       return;
     }
 
@@ -40,20 +40,14 @@ const ImportExcel = () => {
       const response = await uploadExcelWorkbook(file);
       setResult(response);
     } catch (requestError) {
-      setError(requestError.message || 'Import file thất bại.');
+      setError(requestError.message || 'Import thất bại.');
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleClearData = async () => {
-    const isConfirmed = window.confirm(
-      'Thao tác này sẽ xóa toàn bộ monthly incomes, jar allocations, transactions, jar debts và AI advice logs của dữ liệu demo hiện tại. Bạn có chắc không?'
-    );
-
-    if (!isConfirmed) {
-      return;
-    }
+    if (!window.confirm('Thao tác này sẽ xóa toàn bộ dữ liệu đã import. Tiếp tục?')) return;
 
     try {
       setIsClearing(true);
@@ -61,11 +55,9 @@ const ImportExcel = () => {
       const response = await clearImportedWorkbookData();
       setResult(null);
       setFile(null);
-      alert(
-        `Đã xóa dữ liệu cũ. Transactions: ${response.deleted.transactions}, Monthly incomes: ${response.deleted.monthly_incomes}.`
-      );
+      alert(`Đã xóa: ${response.deleted.transactions} giao dịch, ${response.deleted.monthly_incomes} thu nhập.`);
     } catch (requestError) {
-      setError(requestError.message || 'Xóa dữ liệu cũ thất bại.');
+      setError(requestError.message || 'Xóa thất bại.');
     } finally {
       setIsClearing(false);
     }
@@ -76,37 +68,29 @@ const ImportExcel = () => {
       setIsReclassifying(true);
       setError('');
       const response = await reclassifyTransactionsByAi();
-      alert(
-        `Đã phân loại lại ${response.updated} giao dịch bằng AI. Provider đang dùng: ${response.provider || 'unknown'}.`
-      );
+      alert(`Đã phân loại lại ${response.updated} giao dịch bằng AI (${response.provider || 'unknown'}).`);
     } catch (requestError) {
-      setError(requestError.message || 'Phân loại lại bằng AI thất bại.');
+      setError(requestError.message || 'Phân loại thất bại.');
     } finally {
       setIsReclassifying(false);
     }
   };
 
+  const isProcessing = isUploading || isClearing || isReclassifying;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <section
         id="import-overview"
         data-assistant-target="import-overview"
-        className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(102,126,234,0.2)_0%,rgba(118,75,162,0.15)_45%,rgba(15,15,35,0.96)_100%)] p-6 shadow-2xl shadow-slate-950/20"
+        className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[linear-gradient(135deg,rgba(99,102,241,0.12)_0%,rgba(139,92,246,0.08)_45%,rgba(10,10,26,0.97)_100%)] p-5 sm:p-6"
       >
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-100/80">
-          Import Excel
-        </div>
-        <h1 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-          Đưa dữ liệu từ file cũ vào app với trải nghiệm import rõ ràng hơn.
-        </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-          MVP import hỗ trợ sheet 6 hũ, sheet tháng chi tiêu và sheet Nợ quỹ. File được phân tích
-          ở backend rồi lưu trực tiếp vào MongoDB.
+        <h1 className="text-2xl font-bold tracking-tight text-white">Nhập dữ liệu từ Excel</h1>
+        <p className="mt-2 max-w-lg text-sm text-slate-400">
+          Upload workbook Excel để import thu nhập, phân bổ hũ, giao dịch và nợ nội bộ. File được phân tích tự động ở backend.
         </p>
         {error ? (
-          <div className="mt-5 rounded-3xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-            {error}
-          </div>
+          <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{error}</div>
         ) : null}
       </section>
 
@@ -117,39 +101,36 @@ const ImportExcel = () => {
       <section
         id="import-actions"
         data-assistant-target="import-actions"
-        className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20"
+        className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5"
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Thao tác</p>
-        <h3 className="mt-2 text-2xl font-semibold text-white">Import workbook</h3>
-        <p className="mt-3 text-sm leading-7 text-slate-400">
-          Trạng thái:
-          {' '}
-          {isUploading ? 'Đang upload và phân tích workbook...' : 'Sẵn sàng import'}
+        <h2 className="text-base font-semibold text-white">Thao tác</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          {isUploading ? 'Đang xử lý file...' : 'Sẵn sàng import'}
         </p>
-        <div className="mt-5 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-2xl bg-(--hero-gradient) px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
             onClick={handleSubmit}
-            disabled={isUploading || isClearing || isReclassifying}
+            disabled={isProcessing}
+            className="rounded-xl bg-(--hero-gradient) px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/20 transition hover:shadow-indigo-900/30 disabled:opacity-50"
           >
             {isUploading ? 'Đang xử lý...' : 'Bắt đầu import'}
           </button>
           <button
             type="button"
-            className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-5 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/15 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={handleReclassify}
-            disabled={isUploading || isClearing || isReclassifying}
+            disabled={isProcessing}
+            className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-200 transition hover:bg-emerald-500/15 disabled:opacity-50"
           >
-            {isReclassifying ? 'AI đang phân loại lại...' : 'Phân loại lại giao dịch bằng AI'}
+            {isReclassifying ? 'Đang phân loại...' : 'AI phân loại lại'}
           </button>
           <button
             type="button"
-            className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-5 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/15 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={handleClearData}
-            disabled={isUploading || isClearing || isReclassifying}
+            disabled={isProcessing}
+            className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-rose-200 transition hover:bg-rose-500/15 disabled:opacity-50"
           >
-            {isClearing ? 'Đang xóa dữ liệu...' : 'Xóa dữ liệu cũ'}
+            {isClearing ? 'Đang xóa...' : 'Xóa dữ liệu cũ'}
           </button>
         </div>
       </section>

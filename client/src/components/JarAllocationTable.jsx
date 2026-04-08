@@ -1,76 +1,61 @@
 import { formatCurrency } from './formatters.js';
 
 const JarAllocationTable = ({ items }) => (
-  <section className="rounded-[28px] border border-white/10 bg-(--surface-strong) p-5 shadow-lg shadow-slate-950/20">
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-        Phân bổ theo hũ
-      </p>
-      <h3 className="mt-2 text-2xl font-semibold text-white">Lịch sử phân bổ</h3>
-    </div>
+  <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
+    <h3 className="text-base font-semibold text-white">Lịch sử phân bổ</h3>
 
-    <div className="mt-5 space-y-3 md:hidden">
+    <div className="mt-4 space-y-2.5 md:hidden">
       {items.length > 0 ? (
         items.map((item, index) => (
           <article
             key={item._id || `${item.month}-${item.jar_key}-${index}`}
-            className="rounded-[24px] border border-white/10 bg-slate-950/35 p-4"
+            className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4"
           >
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{item.month || '-'}</p>
-            <h4 className="mt-2 text-lg font-semibold text-white">{item.jar_key || '-'}</h4>
-            <p className="mt-3 text-2xl font-bold text-white">
-              {typeof item.allocated_amount === 'number' ? formatCurrency(item.allocated_amount) : '-'}
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium tabular-nums text-slate-500">{item.month || '-'}</p>
+              <p className="text-lg font-bold tabular-nums text-white">
+                {typeof item.allocated_amount === 'number' ? formatCurrency(item.allocated_amount) : '-'}
+              </p>
+            </div>
+            <p className="mt-2 text-sm font-medium text-white">{item.jar_key || '-'}</p>
+            <p className="mt-1 text-xs text-slate-500">
+              {typeof item.allocation_percentage === 'number' ? `${item.allocation_percentage}%` : '-'}
+              {item.note ? ` · ${item.note}` : ''}
             </p>
-            <p className="mt-2 text-sm text-slate-400">
-              {typeof item.allocation_percentage === 'number'
-                ? `${item.allocation_percentage}% tổng thu nhập`
-                : 'Chưa có tỷ lệ'}
-            </p>
-            <p className="mt-1 text-sm text-slate-500">{item.note || 'Không có ghi chú'}</p>
           </article>
         ))
       ) : (
-        <div className="rounded-[24px] border border-dashed border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-slate-400">
-          Chưa có dữ liệu phân bổ hũ.
+        <div className="rounded-xl border border-dashed border-white/[0.08] px-4 py-8 text-center text-sm text-slate-500">
+          Chưa có dữ liệu phân bổ.
         </div>
       )}
     </div>
 
-    <div className="mt-5 hidden overflow-hidden rounded-[24px] border border-white/10 md:block">
+    <div className="mt-4 hidden overflow-hidden rounded-xl border border-white/[0.06] md:block">
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-white/5 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+          <thead className="bg-white/[0.04] text-left text-[11px] font-medium uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="px-4 py-4">Tháng</th>
-              <th className="px-4 py-4">Hũ</th>
-              <th className="px-4 py-4">Số tiền</th>
-              <th className="px-4 py-4">Tỷ lệ</th>
-              <th className="px-4 py-4">Ghi chú</th>
+              <th className="px-4 py-3">Tháng</th>
+              <th className="px-4 py-3">Hũ</th>
+              <th className="px-4 py-3">Số tiền</th>
+              <th className="px-4 py-3">Tỷ lệ</th>
+              <th className="px-4 py-3">Ghi chú</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 bg-slate-950/20">
+          <tbody className="divide-y divide-white/[0.04]">
             {items.length > 0 ? (
               items.map((item, index) => (
-                <tr key={item._id || `${item.month}-${item.jar_key}-${index}`}>
-                  <td className="px-4 py-4 font-semibold text-white">{item.month || '-'}</td>
-                  <td className="px-4 py-4 text-slate-200">{item.jar_key || '-'}</td>
-                  <td className="px-4 py-4 text-slate-200">
-                    {typeof item.allocated_amount === 'number' ? formatCurrency(item.allocated_amount) : '-'}
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">
-                    {typeof item.allocation_percentage === 'number'
-                      ? `${item.allocation_percentage}%`
-                      : '-'}
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">{item.note || '-'}</td>
+                <tr key={item._id || `${item.month}-${item.jar_key}-${index}`} className="transition hover:bg-white/[0.02]">
+                  <td className="px-4 py-3 font-semibold tabular-nums text-white">{item.month || '-'}</td>
+                  <td className="px-4 py-3 text-slate-200">{item.jar_key || '-'}</td>
+                  <td className="px-4 py-3 tabular-nums text-slate-200">{typeof item.allocated_amount === 'number' ? formatCurrency(item.allocated_amount) : '-'}</td>
+                  <td className="px-4 py-3 tabular-nums text-slate-400">{typeof item.allocation_percentage === 'number' ? `${item.allocation_percentage}%` : '-'}</td>
+                  <td className="px-4 py-3 text-slate-500">{item.note || '-'}</td>
                 </tr>
               ))
             ) : (
-              <tr>
-                <td colSpan="5" className="px-4 py-10 text-center text-sm text-slate-400">
-                  Chưa có dữ liệu phân bổ hũ.
-                </td>
-              </tr>
+              <tr><td colSpan="5" className="px-4 py-10 text-center text-sm text-slate-500">Chưa có dữ liệu.</td></tr>
             )}
           </tbody>
         </table>
