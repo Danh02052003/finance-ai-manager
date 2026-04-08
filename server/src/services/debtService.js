@@ -3,7 +3,6 @@ import {
   parseOptionalDate,
   parseOptionalString,
   requireDate,
-  requireDemoUser,
   requireMonth,
   requireNumber,
   requireObjectId,
@@ -34,9 +33,8 @@ const buildDebtPayload = async (userId, payload) => {
   };
 };
 
-export const listDebts = async () => {
-  const user = await requireDemoUser();
-  const debts = await JarDebt.find({ user_id: user._id })
+export const listDebts = async (userId) => {
+  const debts = await JarDebt.find({ user_id: userId })
     .sort({ debt_date: -1, created_at: -1 })
     .lean();
 
@@ -46,9 +44,8 @@ export const listDebts = async () => {
   };
 };
 
-export const createDebt = async (payload) => {
-  const user = await requireDemoUser();
-  const debtPayload = await buildDebtPayload(user._id, payload);
+export const createDebt = async (userId, payload) => {
+  const debtPayload = await buildDebtPayload(userId, payload);
   const debt = await JarDebt.create(debtPayload);
 
   return {
@@ -57,24 +54,23 @@ export const createDebt = async (payload) => {
   };
 };
 
-export const updateDebt = async (debtId, payload) => {
-  const user = await requireDemoUser();
+export const updateDebt = async (userId, debtId, payload) => {
   requireObjectId(debtId, 'debtId');
 
   const existingDebt = await JarDebt.findOne({
     _id: debtId,
-    user_id: user._id
+    user_id: userId
   });
 
   if (!existingDebt) {
     throw new Error('Debt not found.');
   }
 
-  const debtPayload = await buildDebtPayload(user._id, payload);
+  const debtPayload = await buildDebtPayload(userId, payload);
   const debt = await JarDebt.findOneAndUpdate(
     {
       _id: debtId,
-      user_id: user._id
+      user_id: userId
     },
     { $set: debtPayload },
     {
@@ -89,13 +85,12 @@ export const updateDebt = async (debtId, payload) => {
   };
 };
 
-export const deleteDebt = async (debtId) => {
-  const user = await requireDemoUser();
+export const deleteDebt = async (userId, debtId) => {
   requireObjectId(debtId, 'debtId');
 
   const debt = await JarDebt.findOneAndDelete({
     _id: debtId,
-    user_id: user._id
+    user_id: userId
   }).lean();
 
   if (!debt) {

@@ -1,4 +1,5 @@
 export { default as AIAdviceLog } from './AIAdviceLog.js';
+export { default as AuthSession } from './AuthSession.js';
 export { default as Jar } from './Jar.js';
 export { default as JarAllocation } from './JarAllocation.js';
 export { default as JarActualBalance } from './JarActualBalance.js';

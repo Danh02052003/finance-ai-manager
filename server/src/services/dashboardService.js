@@ -1,32 +1,6 @@
 import { Jar, JarAllocation, JarDebt, MonthlyIncome, Transaction } from '../models/index.js';
-import { getDemoUser } from './demoSeedService.js';
 
-export const getDashboardSummary = async () => {
-  const user = await getDemoUser();
-
-  if (!user) {
-    return {
-      message: 'Demo user not found.',
-      data: {
-        user: null,
-        latest_monthly_income: null,
-        latest_jar_allocations: [],
-        recent_transactions: [],
-        open_debts: [],
-        stats: {
-          total_jars: 0,
-          active_jars: 0,
-          latest_income_total: 0,
-          latest_allocation_total: 0,
-          recent_transaction_total: 0,
-          open_debt_total: 0,
-          recent_transaction_count: 0,
-          open_debt_count: 0
-        }
-      }
-    };
-  }
-
+export const getDashboardSummary = async (user) => {
   const [totalJars, activeJars, latestMonthlyIncome, recentTransactions, openDebts] =
     await Promise.all([
       Jar.countDocuments({ user_id: user._id }),

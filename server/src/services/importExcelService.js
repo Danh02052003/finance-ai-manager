@@ -9,7 +9,6 @@ import {
   MonthlyIncome,
   Transaction
 } from '../models/index.js';
-import { ensureDemoData } from './demoSeedService.js';
 import { parseWorkbookForImport } from '../utils/excel/importWorkbook.js';
 
 const getAiServiceBaseUrl = () => process.env.AI_SERVICE_BASE_URL || 'http://localhost:8000';
@@ -87,17 +86,15 @@ const buildImportSummary = (fileName, normalizedData) => ({
   errors: [...normalizedData.errors]
 });
 
-export const resetImportedData = async () => {
-  const user = await ensureDemoData();
-
+export const resetImportedData = async (userId) => {
   const [monthlyIncomes, jarAllocations, jarActualBalances, transactions, jarDebts, aiAdviceLogs] =
     await Promise.all([
-      MonthlyIncome.deleteMany({ user_id: user._id }),
-      JarAllocation.deleteMany({ user_id: user._id }),
-      JarActualBalance.deleteMany({ user_id: user._id }),
-      Transaction.deleteMany({ user_id: user._id }),
-      JarDebt.deleteMany({ user_id: user._id }),
-      AIAdviceLog.deleteMany({ user_id: user._id })
+      MonthlyIncome.deleteMany({ user_id: userId }),
+      JarAllocation.deleteMany({ user_id: userId }),
+      JarActualBalance.deleteMany({ user_id: userId }),
+      Transaction.deleteMany({ user_id: userId }),
+      JarDebt.deleteMany({ user_id: userId }),
+      AIAdviceLog.deleteMany({ user_id: userId })
     ]);
 
   return {
@@ -115,10 +112,9 @@ export const resetImportedData = async () => {
   };
 };
 
-export const reclassifyImportedTransactions = async () => {
-  const user = await ensureDemoData();
+export const reclassifyImportedTransactions = async (userId) => {
   const transactions = await Transaction.find({
-    user_id: user._id,
+    user_id: userId,
     direction: 'expense'
   })
     .sort({ transaction_date: -1, created_at: -1 })
@@ -142,7 +138,7 @@ export const reclassifyImportedTransactions = async () => {
   await Promise.all(
     classificationResult.transactions.map((transaction) =>
       Transaction.updateOne(
-        { _id: transaction._id, user_id: user._id },
+        { _id: transaction._id, user_id: userId },
         {
           $set: {
             category: transaction.category || 'uncategorized'
@@ -160,7 +156,7 @@ export const reclassifyImportedTransactions = async () => {
   };
 };
 
-export const importExcelWorkbook = async (file) => {
+export const importExcelWorkbook = async (userId, file) => {
   if (!file) {
     throw new Error('Excel file is required.');
   }
@@ -170,8 +166,7 @@ export const importExcelWorkbook = async (file) => {
   const classificationResult = await classifyImportedTransactions(normalizedData.transactions);
   normalizedData.transactions = classificationResult.transactions;
   importSummary.warnings.push(...classificationResult.warnings);
-  const user = await ensureDemoData();
-  const jars = await Jar.find({ user_id: user._id }).lean();
+  const jars = await Jar.find({ user_id: userId }).lean();
   const jarMap = new Map(jars.map((jar) => [jar.jar_key, jar]));
   const monthlyIncomeMap = new Map();
 
@@ -186,7 +181,7 @@ export const importExcelWorkbook = async (file) => {
       }
 
       const existingMonthlyIncome = await MonthlyIncome.findOne({
-        user_id: user._id,
+        user_id: userId,
         month: monthlyIncomeItem.month
       });
 
@@ -200,7 +195,7 @@ export const importExcelWorkbook = async (file) => {
       }
 
       const createdMonthlyIncome = await MonthlyIncome.create({
-        user_id: user._id,
+        user_id: userId,
         month: monthlyIncomeItem.month,
         total_amount: monthlyIncomeItem.total_amount,
         currency: 'VND',
@@ -225,7 +220,7 @@ export const importExcelWorkbook = async (file) => {
       }
 
       const existingJarAllocation = await JarAllocation.findOne({
-        user_id: user._id,
+        user_id: userId,
         monthly_income_id: monthlyIncome._id,
         jar_id: jar._id
       });
@@ -236,7 +231,7 @@ export const importExcelWorkbook = async (file) => {
       }
 
       await JarAllocation.create({
-        user_id: user._id,
+        user_id: userId,
         monthly_income_id: monthlyIncome._id,
         jar_id: jar._id,
         jar_key: jar.jar_key,
@@ -252,7 +247,7 @@ export const importExcelWorkbook = async (file) => {
     for (const transactionItem of normalizedData.transactions) {
       const jar = transactionItem.jar_key ? jarMap.get(transactionItem.jar_key) : null;
       const existingTransaction = await Transaction.findOne({
-        user_id: user._id,
+        user_id: userId,
         source: 'excel_import',
         external_row_ref: transactionItem.external_row_ref
       });
@@ -263,7 +258,7 @@ export const importExcelWorkbook = async (file) => {
       }
 
       await Transaction.create({
-        user_id: user._id,
+        user_id: userId,
         jar_id: jar?._id || null,
         jar_key: jar?.jar_key || null,
         month: transactionItem.month,
@@ -294,7 +289,7 @@ export const importExcelWorkbook = async (file) => {
       }
 
       const existingJarDebt = await JarDebt.findOne({
-        user_id: user._id,
+        user_id: userId,
         from_jar_key: jarDebtItem.from_jar_key,
         to_jar_key: jarDebtItem.to_jar_key,
         month: jarDebtItem.month,
@@ -308,7 +303,7 @@ export const importExcelWorkbook = async (file) => {
       }
 
       await JarDebt.create({
-        user_id: user._id,
+        user_id: userId,
         from_jar_id: fromJar._id,
         from_jar_key: fromJar.jar_key,
         to_jar_id: toJar._id,

@@ -8,7 +8,7 @@ import {
 
 export const getJarActualBalances = async (req, res, next) => {
   try {
-    const result = await listJarActualBalances();
+    const result = await listJarActualBalances(req.user._id);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -17,7 +17,7 @@ export const getJarActualBalances = async (req, res, next) => {
 
 export const postJarActualBalance = async (req, res, next) => {
   try {
-    const result = await createJarActualBalance(req.body);
+    const result = await createJarActualBalance(req.user._id, req.body);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -26,7 +26,7 @@ export const postJarActualBalance = async (req, res, next) => {
 
 export const putJarActualBalance = async (req, res, next) => {
   try {
-    const result = await updateJarActualBalance(req.params.id, req.body);
+    const result = await updateJarActualBalance(req.user._id, req.params.id, req.body);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -35,7 +35,7 @@ export const putJarActualBalance = async (req, res, next) => {
 
 export const removeJarActualBalance = async (req, res, next) => {
   try {
-    const result = await deleteJarActualBalance(req.params.id);
+    const result = await deleteJarActualBalance(req.user._id, req.params.id);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -44,7 +44,7 @@ export const removeJarActualBalance = async (req, res, next) => {
 
 export const postDailyYieldRun = async (req, res, next) => {
   try {
-    const result = await triggerDailyYield(req.body);
+    const result = await triggerDailyYield(req.user._id, req.body);
     res.status(200).json(result);
   } catch (error) {
     next(error);

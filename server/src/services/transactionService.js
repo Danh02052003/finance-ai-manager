@@ -3,7 +3,6 @@ import { TRANSACTION_CATEGORIES, TRANSACTION_DIRECTIONS } from '../models/consta
 import {
   parseOptionalString,
   requireDate,
-  requireDemoUser,
   requireMonth,
   requireNumber,
   requireObjectId,
@@ -59,9 +58,8 @@ const buildTransactionPayload = async (userId, payload) => {
   };
 };
 
-export const listTransactions = async () => {
-  const user = await requireDemoUser();
-  const transactions = await Transaction.find({ user_id: user._id })
+export const listTransactions = async (userId) => {
+  const transactions = await Transaction.find({ user_id: userId })
     .sort({ transaction_date: -1, created_at: -1 })
     .lean();
 
@@ -71,11 +69,10 @@ export const listTransactions = async () => {
   };
 };
 
-export const createTransaction = async (payload) => {
-  const user = await requireDemoUser();
-  const transactionPayload = await buildTransactionPayload(user._id, payload);
+export const createTransaction = async (userId, payload) => {
+  const transactionPayload = await buildTransactionPayload(userId, payload);
   const transaction = await Transaction.create(transactionPayload);
-  await applyTransactionImpactToActualBalance(user._id, transactionPayload, 1);
+  await applyTransactionImpactToActualBalance(userId, transactionPayload, 1);
 
   return {
     message: 'Transaction created successfully.',
@@ -83,25 +80,24 @@ export const createTransaction = async (payload) => {
   };
 };
 
-export const updateTransaction = async (transactionId, payload) => {
-  const user = await requireDemoUser();
+export const updateTransaction = async (userId, transactionId, payload) => {
   requireObjectId(transactionId, 'transactionId');
 
   const existingTransaction = await Transaction.findOne({
     _id: transactionId,
-    user_id: user._id
+    user_id: userId
   });
 
   if (!existingTransaction) {
     throw new Error('Transaction not found.');
   }
 
-  const transactionPayload = await buildTransactionPayload(user._id, payload);
+  const transactionPayload = await buildTransactionPayload(userId, payload);
 
   const transaction = await Transaction.findOneAndUpdate(
     {
       _id: transactionId,
-      user_id: user._id
+      user_id: userId
     },
     { $set: transactionPayload },
     {
@@ -110,8 +106,8 @@ export const updateTransaction = async (transactionId, payload) => {
     }
   ).lean();
 
-  await applyTransactionImpactToActualBalance(user._id, existingTransaction, -1);
-  await applyTransactionImpactToActualBalance(user._id, transactionPayload, 1);
+  await applyTransactionImpactToActualBalance(userId, existingTransaction, -1);
+  await applyTransactionImpactToActualBalance(userId, transactionPayload, 1);
 
   return {
     message: 'Transaction updated successfully.',
@@ -119,20 +115,19 @@ export const updateTransaction = async (transactionId, payload) => {
   };
 };
 
-export const deleteTransaction = async (transactionId) => {
-  const user = await requireDemoUser();
+export const deleteTransaction = async (userId, transactionId) => {
   requireObjectId(transactionId, 'transactionId');
 
   const transaction = await Transaction.findOneAndDelete({
     _id: transactionId,
-    user_id: user._id
+    user_id: userId
   }).lean();
 
   if (!transaction) {
     throw new Error('Transaction not found.');
   }
 
-  await applyTransactionImpactToActualBalance(user._id, transaction, -1);
+  await applyTransactionImpactToActualBalance(userId, transaction, -1);
 
   return {
     message: 'Transaction deleted successfully.',

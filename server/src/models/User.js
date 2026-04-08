@@ -14,6 +14,10 @@ const userSchema = new Schema(
       trim: true,
       lowercase: true
     },
+    password_hash: {
+      type: String,
+      trim: true
+    },
     base_currency: {
       type: String,
       required: true,
@@ -27,6 +31,16 @@ const userSchema = new Schema(
     timezone: {
       type: String,
       trim: true
+    },
+    last_login_at: {
+      type: Date
+    },
+    is_demo: {
+      type: Boolean,
+      default: false
+    },
+    demo_migrated_at: {
+      type: Date
     }
   },
   {

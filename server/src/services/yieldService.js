@@ -1,5 +1,4 @@
-import { Jar, JarActualBalance, Transaction } from '../models/index.js';
-import { requireDemoUser } from './mvpDataService.js';
+import { Jar, JarActualBalance, Transaction, User } from '../models/index.js';
 
 const MOMO_TAX_RATE = 0.05;
 const DAILY_START_DELAY_DAYS = 2;
@@ -144,12 +143,15 @@ const buildYieldBreakdown = (balanceAmount, annualRatePercent) => {
   };
 };
 
-export const runDailyYield = async ({ processing_date } = {}) => {
-  const user = await requireDemoUser();
+export const runDailyYield = async ({ userId, processing_date } = {}) => {
+  if (!userId) {
+    throw new Error('userId is required.');
+  }
+
   const processingDate = toDateOnly(processing_date);
   const processingMonth = buildMonthKey(processingDate);
   const actualBalances = await JarActualBalance.find({
-    user_id: user._id,
+    user_id: userId,
     month: processingMonth,
     yield_enabled: true,
     yield_rate_annual: { $gt: 0 }
@@ -187,7 +189,7 @@ export const runDailyYield = async ({ processing_date } = {}) => {
     const lateTopUpAmount = await Transaction.aggregate([
       {
         $match: {
-          user_id: user._id,
+          user_id: userId,
           jar_id: actualBalance.jar_id,
           month: processingMonth,
           direction: 'income_adjustment',
@@ -227,7 +229,7 @@ export const runDailyYield = async ({ processing_date } = {}) => {
 
     const externalRowRef = `momo-yield:${actualBalance.jar_key}:${processingMonth}:${processingDate.toISOString().slice(0, 10)}`;
     const existingTransaction = await Transaction.findOne({
-      user_id: user._id,
+      user_id: userId,
       source: 'momo_yield',
       external_row_ref: externalRowRef
     });
@@ -244,7 +246,7 @@ export const runDailyYield = async ({ processing_date } = {}) => {
     }
 
     await Transaction.create({
-      user_id: user._id,
+      user_id: userId,
       jar_id: actualBalance.jar_id,
       jar_key: actualBalance.jar_key,
       month: processingMonth,
@@ -282,6 +284,30 @@ export const runDailyYield = async ({ processing_date } = {}) => {
     processing_date: processingDate.toISOString().slice(0, 10),
     month: processingMonth,
     processed: results.filter((item) => item.status === 'processed').length,
+    results
+  };
+};
+
+export const runDailyYieldForAllUsers = async ({ processing_date } = {}) => {
+  const users = await User.find({
+    password_hash: { $exists: true, $nin: [null, ''] }
+  })
+    .select({ _id: 1 })
+    .lean();
+
+  const results = await Promise.all(
+    users.map((user) =>
+      runDailyYield({
+        userId: user._id,
+        processing_date
+      })
+    )
+  );
+
+  return {
+    success: true,
+    processed_users: results.length,
+    processed_yields: results.reduce((sum, item) => sum + (item.processed || 0), 0),
     results
   };
 };

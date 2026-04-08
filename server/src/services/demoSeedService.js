@@ -1,16 +1,17 @@
 import { Jar, User } from '../models/index.js';
 
-const DEMO_USER_EMAIL = 'demo@finance-ai-manager.local';
+export const DEMO_USER_EMAIL = 'demo@finance-ai-manager.local';
 
 const DEMO_USER = {
   display_name: 'Demo User',
   email: DEMO_USER_EMAIL,
   base_currency: 'VND',
   locale: 'vi-VN',
-  timezone: 'Asia/Ho_Chi_Minh'
+  timezone: 'Asia/Ho_Chi_Minh',
+  is_demo: true
 };
 
-const DEMO_JARS = [
+export const DEFAULT_JARS = [
   {
     jar_key: 'essentials',
     display_name_vi: 'Hũ chi tiêu cần thiết',
@@ -49,10 +50,30 @@ const DEMO_JARS = [
   }
 ];
 
-export const getDemoUser = async () =>
-  User.findOne({ email: DEMO_USER_EMAIL });
+export const getLegacyDemoUser = async () => User.findOne({ email: DEMO_USER_EMAIL });
 
-export const ensureDemoData = async () => {
+export const ensureUserJars = async (userId) => {
+  await Jar.bulkWrite(
+    DEFAULT_JARS.map((jar) => ({
+      updateOne: {
+        filter: {
+          user_id: userId,
+          jar_key: jar.jar_key
+        },
+        update: {
+          $set: {
+            user_id: userId,
+            ...jar,
+            is_active: true
+          }
+        },
+        upsert: true
+      }
+    }))
+  );
+};
+
+export const seedDemoUser = async () => {
   const user = await User.findOneAndUpdate(
     { email: DEMO_USER_EMAIL },
     { $set: DEMO_USER },
@@ -63,24 +84,25 @@ export const ensureDemoData = async () => {
     }
   );
 
-  await Jar.bulkWrite(
-    DEMO_JARS.map((jar) => ({
-      updateOne: {
-        filter: {
-          user_id: user._id,
-          jar_key: jar.jar_key
-        },
-        update: {
-          $set: {
-            user_id: user._id,
-            ...jar,
-            is_active: true
-          }
-        },
-        upsert: true
-      }
-    }))
-  );
+  await ensureUserJars(user._id);
 
   return user;
+};
+
+export const migrateLegacyDemoUser = async ({ displayName, email, passwordHash }) => {
+  const legacyDemoUser = await getLegacyDemoUser();
+
+  if (!legacyDemoUser) {
+    return null;
+  }
+
+  legacyDemoUser.display_name = displayName;
+  legacyDemoUser.email = email;
+  legacyDemoUser.password_hash = passwordHash;
+  legacyDemoUser.is_demo = false;
+  legacyDemoUser.demo_migrated_at = new Date();
+  await legacyDemoUser.save();
+  await ensureUserJars(legacyDemoUser._id);
+
+  return legacyDemoUser;
 };

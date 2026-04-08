@@ -1,6 +1,9 @@
+import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { NavLink } from 'react-router-dom';
+import { useState } from 'react';
 
 import { navigationItems } from '../config/navigation.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const navGroups = [
   { key: 'core', label: 'Chính' },
@@ -8,8 +11,22 @@ const navGroups = [
   { key: 'tools', label: 'Tiện ích' }
 ];
 
-const Sidebar = ({ isOpen, onClose }) => (
-  <>
+const Sidebar = ({ isOpen, onClose }) => {
+  const { logout, user } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  return (
+    <>
     <button
       type="button"
       onClick={onClose}
@@ -95,11 +112,27 @@ const Sidebar = ({ isOpen, onClose }) => (
         </div>
       </nav>
 
-      <div className="mt-auto border-t border-white/[0.06] pt-4">
+      <div className="mt-auto space-y-3 border-t border-white/[0.06] pt-4">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-3">
+          <p className="truncate text-xs font-semibold text-white">{user?.display_name || 'Tài khoản'}</p>
+          <p className="mt-1 truncate text-[11px] text-slate-500">{user?.email || ''}</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+        >
+          <ArrowRightOnRectangleIcon className="h-4 w-4" />
+          {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+        </button>
+
         <p className="px-3 text-[11px] text-slate-600">v1.0 · Mô hình 6 hũ</p>
       </div>
     </aside>
   </>
-);
+  );
+};
 
 export default Sidebar;

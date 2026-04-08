@@ -1,7 +1,6 @@
 import { JarAllocation } from '../models/index.js';
 import {
   parseOptionalString,
-  requireDemoUser,
   requireNumber,
   requireObjectId,
   resolveJarByKey,
@@ -27,9 +26,8 @@ const buildJarAllocationPayload = async (userId, payload) => {
   };
 };
 
-export const listJarAllocations = async () => {
-  const user = await requireDemoUser();
-  const jarAllocations = await JarAllocation.find({ user_id: user._id })
+export const listJarAllocations = async (userId) => {
+  const jarAllocations = await JarAllocation.find({ user_id: userId })
     .sort({ month: -1, jar_key: 1, created_at: -1 })
     .lean();
 
@@ -39,12 +37,11 @@ export const listJarAllocations = async () => {
   };
 };
 
-export const createJarAllocation = async (payload) => {
-  const user = await requireDemoUser();
-  const jarAllocationPayload = await buildJarAllocationPayload(user._id, payload);
+export const createJarAllocation = async (userId, payload) => {
+  const jarAllocationPayload = await buildJarAllocationPayload(userId, payload);
 
   const existingJarAllocation = await JarAllocation.findOne({
-    user_id: user._id,
+    user_id: userId,
     monthly_income_id: jarAllocationPayload.monthly_income_id,
     jar_id: jarAllocationPayload.jar_id
   });
@@ -61,23 +58,22 @@ export const createJarAllocation = async (payload) => {
   };
 };
 
-export const updateJarAllocation = async (jarAllocationId, payload) => {
-  const user = await requireDemoUser();
+export const updateJarAllocation = async (userId, jarAllocationId, payload) => {
   requireObjectId(jarAllocationId, 'jarAllocationId');
 
   const existingJarAllocation = await JarAllocation.findOne({
     _id: jarAllocationId,
-    user_id: user._id
+    user_id: userId
   });
 
   if (!existingJarAllocation) {
     throw new Error('Jar allocation not found.');
   }
 
-  const jarAllocationPayload = await buildJarAllocationPayload(user._id, payload);
+  const jarAllocationPayload = await buildJarAllocationPayload(userId, payload);
   const conflictingJarAllocation = await JarAllocation.findOne({
     _id: { $ne: jarAllocationId },
-    user_id: user._id,
+    user_id: userId,
     monthly_income_id: jarAllocationPayload.monthly_income_id,
     jar_id: jarAllocationPayload.jar_id
   });
@@ -89,7 +85,7 @@ export const updateJarAllocation = async (jarAllocationId, payload) => {
   const jarAllocation = await JarAllocation.findOneAndUpdate(
     {
       _id: jarAllocationId,
-      user_id: user._id
+      user_id: userId
     },
     { $set: jarAllocationPayload },
     {
@@ -104,13 +100,12 @@ export const updateJarAllocation = async (jarAllocationId, payload) => {
   };
 };
 
-export const deleteJarAllocation = async (jarAllocationId) => {
-  const user = await requireDemoUser();
+export const deleteJarAllocation = async (userId, jarAllocationId) => {
   requireObjectId(jarAllocationId, 'jarAllocationId');
 
   const jarAllocation = await JarAllocation.findOneAndDelete({
     _id: jarAllocationId,
-    user_id: user._id
+    user_id: userId
   }).lean();
 
   if (!jarAllocation) {

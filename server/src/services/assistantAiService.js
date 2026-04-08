@@ -3,7 +3,6 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { JarActualBalance, JarAllocation, JarDebt, MonthlyIncome, Transaction } from '../models/index.js';
-import { getDemoUser } from './demoSeedService.js';
 
 const getAiServiceBaseUrl = () => process.env.AI_SERVICE_BASE_URL || 'http://localhost:8000';
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -75,7 +74,7 @@ const WEBSITE_KNOWLEDGE = {
   ],
   assistant_capabilities: [
     'giải thích cách dùng từng màn hình',
-    'trả lời dựa trên dữ liệu hiện có của tài khoản demo',
+    'trả lời dựa trên dữ liệu hiện có của tài khoản đang đăng nhập',
     'nhắc rõ khi dữ liệu thiếu hoặc chưa có',
     'tư vấn tài chính cơ bản theo mô hình 6 hũ',
     'phân biệt ngân sách tháng đang quản lý và số dư thực giữ riêng',
@@ -274,8 +273,7 @@ const loadUsageGuide = async () => {
   return usageGuideCache;
 };
 
-const buildAssistantContext = async () => {
-  const user = await getDemoUser();
+const buildAssistantContext = async (user) => {
   const usageGuide = await loadUsageGuide();
 
   if (!user) {
@@ -356,8 +354,13 @@ const buildAssistantContext = async () => {
   };
 };
 
-export const createAssistantReply = async ({ message = '', page_path = '/', page_title = '' } = {}) => {
-  const appContext = await buildAssistantContext();
+export const createAssistantReply = async ({
+  user,
+  message = '',
+  page_path = '/',
+  page_title = ''
+} = {}) => {
+  const appContext = await buildAssistantContext(user);
   const response = await fetch(`${getAiServiceBaseUrl()}/assistant-ai/chat`, {
     method: 'POST',
     headers: {

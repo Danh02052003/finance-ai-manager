@@ -2,7 +2,6 @@ import { JarAllocation, MonthlyIncome } from '../models/index.js';
 import {
   parseOptionalString,
   requireDate,
-  requireDemoUser,
   requireMonth,
   requireMoneyInput,
   requireObjectId
@@ -19,9 +18,8 @@ const buildMonthlyIncomePayload = (userId, payload) => ({
   source_note: parseOptionalString(payload.source_note) || null
 });
 
-export const listMonthlyIncomes = async () => {
-  const user = await requireDemoUser();
-  const monthlyIncomes = await MonthlyIncome.find({ user_id: user._id })
+export const listMonthlyIncomes = async (userId) => {
+  const monthlyIncomes = await MonthlyIncome.find({ user_id: userId })
     .sort({ month: -1, created_at: -1 })
     .lean();
 
@@ -31,12 +29,11 @@ export const listMonthlyIncomes = async () => {
   };
 };
 
-export const createMonthlyIncome = async (payload) => {
-  const user = await requireDemoUser();
-  const monthlyIncomePayload = buildMonthlyIncomePayload(user._id, payload);
+export const createMonthlyIncome = async (userId, payload) => {
+  const monthlyIncomePayload = buildMonthlyIncomePayload(userId, payload);
 
   const existingMonthlyIncome = await MonthlyIncome.findOne({
-    user_id: user._id,
+    user_id: userId,
     month: monthlyIncomePayload.month
   });
 
@@ -52,23 +49,22 @@ export const createMonthlyIncome = async (payload) => {
   };
 };
 
-export const updateMonthlyIncome = async (monthlyIncomeId, payload) => {
-  const user = await requireDemoUser();
+export const updateMonthlyIncome = async (userId, monthlyIncomeId, payload) => {
   requireObjectId(monthlyIncomeId, 'monthlyIncomeId');
 
   const existingMonthlyIncome = await MonthlyIncome.findOne({
     _id: monthlyIncomeId,
-    user_id: user._id
+    user_id: userId
   });
 
   if (!existingMonthlyIncome) {
     throw new Error('Monthly income not found.');
   }
 
-  const monthlyIncomePayload = buildMonthlyIncomePayload(user._id, payload);
+  const monthlyIncomePayload = buildMonthlyIncomePayload(userId, payload);
   const conflictingMonthlyIncome = await MonthlyIncome.findOne({
     _id: { $ne: monthlyIncomeId },
-    user_id: user._id,
+    user_id: userId,
     month: monthlyIncomePayload.month
   });
 
@@ -79,7 +75,7 @@ export const updateMonthlyIncome = async (monthlyIncomeId, payload) => {
   const monthlyIncome = await MonthlyIncome.findOneAndUpdate(
     {
       _id: monthlyIncomeId,
-      user_id: user._id
+      user_id: userId
     },
     { $set: monthlyIncomePayload },
     {
@@ -94,13 +90,12 @@ export const updateMonthlyIncome = async (monthlyIncomeId, payload) => {
   };
 };
 
-export const deleteMonthlyIncome = async (monthlyIncomeId) => {
-  const user = await requireDemoUser();
+export const deleteMonthlyIncome = async (userId, monthlyIncomeId) => {
   requireObjectId(monthlyIncomeId, 'monthlyIncomeId');
 
   const monthlyIncome = await MonthlyIncome.findOneAndDelete({
     _id: monthlyIncomeId,
-    user_id: user._id
+    user_id: userId
   }).lean();
 
   if (!monthlyIncome) {
@@ -108,7 +103,7 @@ export const deleteMonthlyIncome = async (monthlyIncomeId) => {
   }
 
   await JarAllocation.deleteMany({
-    user_id: user._id,
+    user_id: userId,
     monthly_income_id: monthlyIncome._id
   });
 

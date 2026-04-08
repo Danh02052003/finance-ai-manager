@@ -2,17 +2,6 @@ import mongoose from 'mongoose';
 
 import { Jar, MonthlyIncome } from '../models/index.js';
 import { MONTH_PATTERN } from '../models/constants.js';
-import { getDemoUser } from './demoSeedService.js';
-
-export const requireDemoUser = async () => {
-  const user = await getDemoUser();
-
-  if (!user) {
-    throw new Error('Demo user not found.');
-  }
-
-  return user;
-};
 
 export const requireObjectId = (value, fieldName) => {
   if (!mongoose.isValidObjectId(value)) {

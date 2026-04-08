@@ -2,8 +2,8 @@ import dotenv from 'dotenv';
 
 import app from './app.js';
 import connectToDatabase from './config/db.js';
-import { ensureDemoData } from './services/demoSeedService.js';
-import { runDailyYield } from './services/yieldService.js';
+import { seedDemoUser } from './services/demoSeedService.js';
+import { runDailyYieldForAllUsers } from './services/yieldService.js';
 
 dotenv.config();
 
@@ -12,7 +12,7 @@ const YIELD_SYNC_INTERVAL_MS = 60 * 60 * 1000;
 
 const syncDailyYield = async () => {
   try {
-    await runDailyYield();
+    await runDailyYieldForAllUsers();
   } catch (error) {
     console.error('Daily yield sync failed', error);
   }
@@ -20,7 +20,11 @@ const syncDailyYield = async () => {
 
 const startServer = async () => {
   await connectToDatabase(process.env.MONGODB_URI);
-  await ensureDemoData();
+
+  if (process.env.ENABLE_DEMO_SEED === 'true') {
+    await seedDemoUser();
+  }
+
   await syncDailyYield();
   setInterval(syncDailyYield, YIELD_SYNC_INTERVAL_MS);
 

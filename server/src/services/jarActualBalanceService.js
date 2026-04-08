@@ -2,7 +2,6 @@ import { JarActualBalance } from '../models/index.js';
 import {
   parseOptionalString,
   parseOptionalDate,
-  requireDemoUser,
   requireMoneyInput,
   requireMonth,
   requireNumber,
@@ -45,9 +44,8 @@ const buildJarActualBalancePayload = async (userId, payload, existingRecord = nu
   };
 };
 
-export const listJarActualBalances = async () => {
-  const user = await requireDemoUser();
-  const jarActualBalances = await JarActualBalance.find({ user_id: user._id })
+export const listJarActualBalances = async (userId) => {
+  const jarActualBalances = await JarActualBalance.find({ user_id: userId })
     .sort({ month: -1, jar_key: 1, updated_at: -1 })
     .lean();
 
@@ -57,12 +55,11 @@ export const listJarActualBalances = async () => {
   };
 };
 
-export const createJarActualBalance = async (payload) => {
-  const user = await requireDemoUser();
-  const jarActualBalancePayload = await buildJarActualBalancePayload(user._id, payload, null);
+export const createJarActualBalance = async (userId, payload) => {
+  const jarActualBalancePayload = await buildJarActualBalancePayload(userId, payload, null);
 
   const existingJarActualBalance = await JarActualBalance.findOne({
-    user_id: user._id,
+    user_id: userId,
     month: jarActualBalancePayload.month,
     jar_id: jarActualBalancePayload.jar_id
   });
@@ -79,13 +76,12 @@ export const createJarActualBalance = async (payload) => {
   };
 };
 
-export const updateJarActualBalance = async (jarActualBalanceId, payload) => {
-  const user = await requireDemoUser();
+export const updateJarActualBalance = async (userId, jarActualBalanceId, payload) => {
   requireObjectId(jarActualBalanceId, 'jarActualBalanceId');
 
   const existingJarActualBalance = await JarActualBalance.findOne({
     _id: jarActualBalanceId,
-    user_id: user._id
+    user_id: userId
   });
 
   if (!existingJarActualBalance) {
@@ -93,13 +89,13 @@ export const updateJarActualBalance = async (jarActualBalanceId, payload) => {
   }
 
   const jarActualBalancePayload = await buildJarActualBalancePayload(
-    user._id,
+    userId,
     payload,
     existingJarActualBalance
   );
   const conflictingJarActualBalance = await JarActualBalance.findOne({
     _id: { $ne: jarActualBalanceId },
-    user_id: user._id,
+    user_id: userId,
     month: jarActualBalancePayload.month,
     jar_id: jarActualBalancePayload.jar_id
   });
@@ -111,7 +107,7 @@ export const updateJarActualBalance = async (jarActualBalanceId, payload) => {
   const jarActualBalance = await JarActualBalance.findOneAndUpdate(
     {
       _id: jarActualBalanceId,
-      user_id: user._id
+      user_id: userId
     },
     { $set: jarActualBalancePayload },
     {
@@ -126,13 +122,12 @@ export const updateJarActualBalance = async (jarActualBalanceId, payload) => {
   };
 };
 
-export const deleteJarActualBalance = async (jarActualBalanceId) => {
-  const user = await requireDemoUser();
+export const deleteJarActualBalance = async (userId, jarActualBalanceId) => {
   requireObjectId(jarActualBalanceId, 'jarActualBalanceId');
 
   const jarActualBalance = await JarActualBalance.findOneAndDelete({
     _id: jarActualBalanceId,
-    user_id: user._id
+    user_id: userId
   }).lean();
 
   if (!jarActualBalance) {
@@ -147,4 +142,4 @@ export const deleteJarActualBalance = async (jarActualBalanceId) => {
   };
 };
 
-export const triggerDailyYield = async (payload) => runDailyYield(payload || {});
+export const triggerDailyYield = async (userId, payload) => runDailyYield({ userId, ...(payload || {}) });
