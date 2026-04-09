@@ -27,7 +27,7 @@ const RegisterPage = () => {
     event.preventDefault();
 
     if (form.password !== form.confirmPassword) {
-      setError('M岷璽 kh岷﹗ nh岷璸 l岷 ch瓢a kh峄沺.');
+      setError('Mật khẩu nhập lại chưa khớp.');
       return;
     }
 
@@ -42,7 +42,7 @@ const RegisterPage = () => {
       });
       navigate('/dashboard', { replace: true });
     } catch (requestError) {
-      setError(requestError.message || 'Kh么ng th峄?膽膬ng k媒.');
+      setError(requestError.message || 'Không thể đăng ký.');
     } finally {
       setIsSubmitting(false);
     }
@@ -137,7 +137,7 @@ const RegisterPage = () => {
             <button
               type="button"
               onClick={() => setShowConfirmPassword((current) => !current)}
-              aria-label={showConfirmPassword ? 'Hiển thị mật khẩu' : 'Ẩn mật khẩu'}
+              aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
               className="shrink-0 text-slate-500 transition hover:text-white"
             >
               {showConfirmPassword ? (

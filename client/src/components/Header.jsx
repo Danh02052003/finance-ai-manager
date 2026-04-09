@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 const Header = ({ onOpenSidebar }) => {
   const location = useLocation();
   const pageMeta = getPageMeta(location.pathname);
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -46,23 +46,6 @@ const Header = ({ onOpenSidebar }) => {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-right lg:block">
-              <p className="max-w-[180px] truncate text-xs font-semibold text-white">
-                {user?.display_name || 'Tài khoản'}
-              </p>
-              <p className="max-w-[180px] truncate text-[11px] text-slate-500">{user?.email || ''}</p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="hidden h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] text-slate-400 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50 lg:inline-flex"
-              aria-label="Đăng xuất"
-            >
-              <ArrowRightOnRectangleIcon className="h-4 w-4" />
-            </button>
-
             <Link
               to="/transactions?quickAdd=1"
               className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 active:scale-[0.97]"

@@ -32,7 +32,7 @@ const LoginPage = () => {
       await login(form);
       navigate(redirectTo, { replace: true });
     } catch (requestError) {
-      setError(requestError.message || 'Kh么ng th峄?膽膬ng nh岷璸.');
+      setError(requestError.message || 'Không thể đăng nhập.');
     } finally {
       setIsSubmitting(false);
     }
@@ -77,14 +77,14 @@ const LoginPage = () => {
             autoComplete="current-password"
             value={form.password}
             onChange={handleChange}
-            placeholder="Tạo mật khẩu tối thiểu 8 ký tự"
+            placeholder="Tối thiểu 8 ký tự"
             className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
             required
           />
           <button
             type="button"
             onClick={() => setShowPassword((current) => !current)}
-            aria-label={showPassword ? 'Hiển thị mật khẩu' : 'Ẩn mật khẩu'}
+            aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
             className="shrink-0 text-slate-500 transition hover:text-white"
           >
             {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}

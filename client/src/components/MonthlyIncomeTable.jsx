@@ -20,8 +20,20 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
             <p className="mt-2 text-xs text-slate-500">Nhận ngày {formatDate(item.income_date)}</p>
             {item.source_note ? <p className="mt-1 text-xs text-slate-500">{item.source_note}</p> : null}
             <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => onEdit?.(item)} className="flex-1 rounded-lg border border-white/[0.08] py-2 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06]">Sửa</button>
-              <button type="button" onClick={() => onDelete?.(item)} className="flex-1 rounded-lg bg-rose-500/10 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/15">Xóa</button>
+              <button
+                type="button"
+                onClick={() => onEdit?.(item)}
+                className="flex-1 rounded-lg border border-white/[0.08] py-2 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06]"
+              >
+                Sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete?.(item)}
+                className="flex-1 rounded-lg bg-rose-500/10 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/15"
+              >
+                Xóa
+              </button>
             </div>
           </article>
         ))
@@ -49,19 +61,37 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
               items.map((item, index) => (
                 <tr key={item._id || `${item.month}-${index}`} className="transition hover:bg-white/[0.02]">
                   <td className="px-4 py-3 font-semibold tabular-nums text-white">{item.month || '-'}</td>
-                  <td className="px-4 py-3 tabular-nums text-slate-200">{typeof item.total_amount === 'number' ? formatCurrency(item.total_amount) : '-'}</td>
+                  <td className="px-4 py-3 tabular-nums text-slate-200">
+                    {typeof item.total_amount === 'number' ? formatCurrency(item.total_amount) : '-'}
+                  </td>
                   <td className="px-4 py-3 text-slate-400">{formatDate(item.income_date)}</td>
                   <td className="px-4 py-3 text-slate-500">{item.source_note || '-'}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1.5">
-                      <button type="button" onClick={() => onEdit?.(item)} className="rounded-lg border border-white/[0.08] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06]">Sửa</button>
-                      <button type="button" onClick={() => onDelete?.(item)} className="rounded-lg bg-rose-500/10 px-2.5 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/15">Xóa</button>
+                      <button
+                        type="button"
+                        onClick={() => onEdit?.(item)}
+                        className="rounded-lg border border-white/[0.08] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06]"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete?.(item)}
+                        className="rounded-lg bg-rose-500/10 px-2.5 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/15"
+                      >
+                        Xóa
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))
             ) : (
-              <tr><td colSpan="5" className="px-4 py-10 text-center text-sm text-slate-500">Chưa có dữ liệu.</td></tr>
+              <tr>
+                <td colSpan="5" className="px-4 py-10 text-center text-sm text-slate-500">
+                  Chưa có dữ liệu.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

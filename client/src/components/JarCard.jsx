@@ -15,7 +15,7 @@ const JarCard = ({
   jar,
   amount = 0,
   percentage = null,
-  deltaLabel = 'Sẵn sàng lên kế hoạch',
+  deltaLabel = 'So với sàn lên kế hoạch',
   spentAmount = 0,
   remainingAmount = null,
   reserveAmount = null,
@@ -60,14 +60,14 @@ const JarCard = ({
         >
           <div className="rounded-lg bg-white/[0.06] px-3 py-2">
             <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">
-            Chi {monthLabel || 'tháng này'}
+              Chi {monthLabel || 'tháng này'}
             </p>
             <p className="mt-0.5 text-sm font-semibold tabular-nums text-rose-300">
               {formatCurrency(spentAmount)}
             </p>
           </div>
           <div className="rounded-lg bg-white/[0.06] px-3 py-2">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">C貌n l岷</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">Còn lại</p>
             <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
               {formatCurrency(remainingAmount ?? amount)}
             </p>
@@ -75,7 +75,7 @@ const JarCard = ({
           {reserveAmount != null || reserveLabel ? (
             <div className="rounded-lg bg-sky-500/10 px-3 py-2">
               <p className="text-[10px] font-medium uppercase tracking-wider text-sky-300/60">
-              {reserveLabel || 'Giữ riêng'}
+                {reserveLabel || 'Giữ riêng'}
               </p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-sky-200">
                 {formatCurrency(reserveAmount || 0)}

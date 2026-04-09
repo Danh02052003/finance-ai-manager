@@ -8,7 +8,7 @@ import {
   requireObjectId,
   resolveJarByKey
 } from './mvpDataService.js';
-import { createYieldDates, runDailyYield } from './yieldService.js';
+import { createYieldDates, DEFAULT_MOMO_YIELD_RATE, runDailyYield } from './yieldService.js';
 
 const buildJarActualBalancePayload = async (userId, payload, existingRecord = null) => {
   const month = requireMonth(payload.month);
@@ -34,7 +34,7 @@ const buildJarActualBalancePayload = async (userId, payload, existingRecord = nu
     yield_start_date: yieldDates.yield_start_date,
     yield_rate_annual:
       payload.yield_rate_annual == null
-        ? Number(existingRecord?.yield_rate_annual || 0)
+        ? Number(existingRecord?.yield_rate_annual ?? DEFAULT_MOMO_YIELD_RATE)
         : requireNumber(payload.yield_rate_annual, 'yield_rate_annual'),
     last_yield_processed_at: existingRecord?.last_yield_processed_at || null,
     gross_yield_amount: Number(existingRecord?.gross_yield_amount || 0),

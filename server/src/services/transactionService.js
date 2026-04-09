@@ -11,6 +11,8 @@ import {
 } from './mvpDataService.js';
 import { applyTransactionImpactToActualBalance } from './yieldService.js';
 
+const getAiServiceBaseUrl = () => process.env.AI_SERVICE_BASE_URL || 'http://localhost:8000';
+
 const normalizeTransactionAmount = (value) => {
   const parsedValue = requireNumber(value, 'amount');
 
@@ -38,8 +40,55 @@ const normalizeCategory = (value) => {
   return category;
 };
 
+const classifyTransactionCategoryWithAi = async (payload) => {
+  try {
+    const response = await fetch(`${getAiServiceBaseUrl()}/import-ai/classify-transactions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        items: [
+          {
+            id: 'manual-transaction',
+            description: payload.description,
+            jar_key: payload.jar_key,
+            amount: payload.amount,
+            month: payload.month,
+            notes: payload.notes
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI service returned ${response.status}.`);
+    }
+
+    const result = await response.json();
+    const category = result?.items?.[0]?.category;
+
+    return TRANSACTION_CATEGORIES.includes(category) ? category : 'uncategorized';
+  } catch {
+    return 'uncategorized';
+  }
+};
+
 const buildTransactionPayload = async (userId, payload) => {
   const jar = await resolveJarByKey(userId, payload.jar_key || 'essentials');
+  const description = requireString(payload.description, 'description');
+  const notes = parseOptionalString(payload.notes) || null;
+  const normalizedCategory = normalizeCategory(payload.category);
+  const category =
+    normalizedCategory === 'uncategorized'
+      ? await classifyTransactionCategoryWithAi({
+          description,
+          jar_key: jar?.jar_key || null,
+          amount: payload.amount,
+          month: payload.month,
+          notes
+        })
+      : normalizedCategory;
 
   return {
     user_id: userId,
@@ -50,11 +99,11 @@ const buildTransactionPayload = async (userId, payload) => {
     amount: normalizeTransactionAmount(payload.amount),
     currency: payload.currency?.trim() || 'VND',
     direction: normalizeDirection(payload.direction),
-    category: normalizeCategory(payload.category),
-    description: requireString(payload.description, 'description'),
+    category,
+    description,
     source: parseOptionalString(payload.source) || 'manual',
     external_row_ref: parseOptionalString(payload.external_row_ref) || null,
-    notes: parseOptionalString(payload.notes) || null
+    notes
   };
 };
 

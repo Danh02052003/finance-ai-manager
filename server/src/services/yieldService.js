@@ -1,6 +1,7 @@
 import { Jar, JarActualBalance, Transaction, User } from '../models/index.js';
 
-const MOMO_TAX_RATE = 0.05;
+export const MOMO_TAX_RATE = 0.05;
+export const DEFAULT_MOMO_YIELD_RATE = 4.5;
 const DAILY_START_DELAY_DAYS = 2;
 
 const toDateOnly = (value) => {
@@ -40,9 +41,9 @@ const isSameDate = (firstValue, secondValue) =>
   firstValue.getMonth() === secondValue.getMonth() &&
   firstValue.getDate() === secondValue.getDate();
 
-const normalizeAnnualYieldRate = (value) => {
+const normalizeAnnualYieldRate = (value, defaultValue = DEFAULT_MOMO_YIELD_RATE) => {
   const parsedValue = Number(value);
-  return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  return Number.isNaN(parsedValue) ? defaultValue : parsedValue;
 };
 
 const normalizeYieldBoolean = (value, defaultValue = true) =>
@@ -76,7 +77,24 @@ export const ensureJarActualBalanceRecord = async (
     return existingRecord;
   }
 
-  const yieldDates = createYieldDates(defaults.yield_activation_date);
+  const monthlyReferenceRecord = await JarActualBalance.findOne({
+    user_id: userId,
+    month
+  })
+    .sort({ updated_at: -1 })
+    .lean();
+  const mergedDefaults = {
+    yield_enabled: defaults.yield_enabled ?? monthlyReferenceRecord?.yield_enabled ?? true,
+    yield_rate_annual:
+      defaults.yield_rate_annual ?? monthlyReferenceRecord?.yield_rate_annual ?? DEFAULT_MOMO_YIELD_RATE,
+    yield_activation_date:
+      defaults.yield_activation_date ?? monthlyReferenceRecord?.yield_activation_date ?? null,
+    gross_yield_amount: defaults.gross_yield_amount ?? 0,
+    withholding_tax_amount: defaults.withholding_tax_amount ?? 0,
+    net_yield_amount: defaults.net_yield_amount ?? 0,
+    note: defaults.note ?? null
+  };
+  const yieldDates = createYieldDates(mergedDefaults.yield_activation_date);
 
   return JarActualBalance.create({
     user_id: userId,
@@ -84,12 +102,12 @@ export const ensureJarActualBalanceRecord = async (
     jar_key: jar.jar_key,
     month,
     actual_balance_amount: initialAmount,
-    yield_enabled: normalizeYieldBoolean(defaults.yield_enabled, true),
-    yield_rate_annual: normalizeAnnualYieldRate(defaults.yield_rate_annual),
-    gross_yield_amount: Number(defaults.gross_yield_amount || 0),
-    withholding_tax_amount: Number(defaults.withholding_tax_amount || 0),
-    net_yield_amount: Number(defaults.net_yield_amount || 0),
-    note: defaults.note || null,
+    yield_enabled: normalizeYieldBoolean(mergedDefaults.yield_enabled, true),
+    yield_rate_annual: normalizeAnnualYieldRate(mergedDefaults.yield_rate_annual),
+    gross_yield_amount: Number(mergedDefaults.gross_yield_amount || 0),
+    withholding_tax_amount: Number(mergedDefaults.withholding_tax_amount || 0),
+    net_yield_amount: Number(mergedDefaults.net_yield_amount || 0),
+    note: mergedDefaults.note || null,
     ...yieldDates
   });
 };

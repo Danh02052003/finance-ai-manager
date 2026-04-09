@@ -44,7 +44,7 @@ const jarActualBalanceSchema = new Schema(
     yield_rate_annual: {
       type: Number,
       required: true,
-      default: 0
+      default: 4.5
     },
     last_yield_processed_at: {
       type: Date

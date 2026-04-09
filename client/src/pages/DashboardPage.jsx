@@ -1,7 +1,6 @@
 import {
   ArrowTrendingUpIcon,
-  CalendarDaysIcon,
-  PlusIcon
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -167,7 +166,6 @@ const DashboardPage = () => {
 
   const totalAllocated = jarCards.reduce((sum, item) => sum + item.allocatedAmount, 0);
   const totalSpent = jarCards.reduce((sum, item) => sum + item.spentAmount, 0);
-  const totalAdjustments = jarCards.reduce((sum, item) => sum + item.adjustmentAmount, 0);
   const totalRemaining = jarCards.reduce((sum, item) => sum + item.remainingAmount, 0);
 
   const recentDayCards = useMemo(() => {
@@ -218,11 +216,6 @@ const DashboardPage = () => {
   const openDebtCount = dashboardData?.stats?.open_debt_count || 0;
   const spentPercentage = totalAllocated > 0 ? Math.round((totalSpent / totalAllocated) * 100) : 0;
 
-  const handleOpenQuickAdd = () => {
-    const params = new URLSearchParams({ quickAdd: '1', month: selectedMonth });
-    navigate(`/transactions?${params.toString()}`);
-  };
-
   const handleOpenJarHistory = (jar) => {
     const params = new URLSearchParams({ jar: jar.jar_key, month: selectedMonth });
     navigate(`/transactions?${params.toString()}`);
@@ -242,40 +235,6 @@ const DashboardPage = () => {
           {error}
         </div>
       ) : null}
-
-      <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-slate-300">
-              <CalendarDaysIcon className="h-4 w-4 text-slate-500" />
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(event) => setSelectedMonth(event.target.value)}
-                className="bg-transparent outline-none"
-              />
-            </label>
-          </div>
-
-          <div className="flex gap-2">
-            <Link
-              to="/monthly-plan"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.08]"
-            >
-              <CalendarDaysIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Kế hoạch tháng</span>
-            </Link>
-            <button
-              type="button"
-              onClick={handleOpenQuickAdd}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400"
-            >
-              <PlusIcon className="h-4 w-4" />
-              <span>Ghi chi tiêu</span>
-            </button>
-          </div>
-        </div>
-      </section>
 
       {hasBudgetData ? (
         <>

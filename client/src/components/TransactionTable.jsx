@@ -73,10 +73,6 @@ const getSourceBadge = (item) => {
     return 'Lãi MoMo';
   }
 
-  if (item.direction === 'income_adjustment') {
-    return 'Thu vào hũ';
-  }
-
   return '';
 };
 
@@ -184,7 +180,6 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
 
 const TransactionTable = ({
   items,
-  eyebrow = 'Lịch sử giao dịch',
   title = 'Theo ngày',
   subtitle = '',
   jarNameByKey = {},
@@ -248,9 +243,7 @@ const TransactionTable = ({
                 <summary className="flex cursor-pointer list-none flex-col gap-2 px-4 py-3 transition hover:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-white">{group.title}</p>
-                    <span className="text-xs text-slate-500">
-                      {group.items.length} giao dịch
-                    </span>
+                    <span className="text-xs text-slate-500">{group.items.length} giao dịch</span>
                     {isHighlighted ? (
                       <span className="rounded-md bg-indigo-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-300">
                         Đang xem
@@ -291,7 +284,7 @@ const TransactionTable = ({
           <div className="rounded-xl border border-dashed border-white/[0.08] px-4 py-10 text-center">
             <CheckCircleIcon className="mx-auto h-7 w-7 text-slate-600" />
             <p className="mt-2 text-sm text-slate-400">Không có giao dịch khớp bộ lọc.</p>
-            <p className="mt-1 text-xs text-slate-500">Thử bỏ bớt điều kiện lọc hoặc ghi thêm chi tiêu mới.</p>
+            <p className="mt-1 text-xs text-slate-500">Thử bỏ bớt điều kiện lọc hoặc ghi thêm giao dịch mới.</p>
           </div>
         )}
       </div>

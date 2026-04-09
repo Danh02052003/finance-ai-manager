@@ -15,7 +15,6 @@ import {
   getTransactions,
   updateTransaction
 } from '../api/dashboardApi.js';
-import { formatCurrency } from '../components/formatters.js';
 import TransactionTable from '../components/TransactionTable.jsx';
 
 const todayString = () => new Date().toISOString().slice(0, 10);
@@ -93,7 +92,6 @@ const TransactionsPage = () => {
   const [selectedJarFilter, setSelectedJarFilter] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
   const [selectedMonthFilter, setSelectedMonthFilter] = useState('');
-  const [selectedDateFilter, setSelectedDateFilter] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -108,6 +106,7 @@ const TransactionsPage = () => {
     () => Array.from(new Set(transactions.map((item) => item.month).filter(Boolean))).sort().reverse(),
     [transactions]
   );
+
   const filteredTransactions = useMemo(() => {
     const normalizedQuery = normalizeSearchText(searchTerm);
     const exactAmountQuery = parseAmountSearchValue(searchTerm);
@@ -116,7 +115,6 @@ const TransactionsPage = () => {
       if (selectedJarFilter && transaction.jar_key !== selectedJarFilter) return false;
       if (selectedCategoryFilter && (transaction.category || 'uncategorized') !== selectedCategoryFilter) return false;
       if (selectedMonthFilter && transaction.month !== selectedMonthFilter) return false;
-      if (selectedDateFilter && String(transaction.transaction_date || '').slice(0, 10) !== selectedDateFilter) return false;
       if (!normalizedQuery) return true;
       if (exactAmountQuery != null) return Number(transaction.amount) === exactAmountQuery;
 
@@ -137,7 +135,7 @@ const TransactionsPage = () => {
 
       return normalizeSearchText(searchBlob).includes(normalizedQuery);
     });
-  }, [jars, searchTerm, selectedCategoryFilter, selectedDateFilter, selectedJarFilter, selectedMonthFilter, transactions]);
+  }, [jars, searchTerm, selectedCategoryFilter, selectedJarFilter, selectedMonthFilter, transactions]);
 
   const selectedJarName = jarNameByKey[selectedJarFilter] || '';
 
@@ -171,26 +169,19 @@ const TransactionsPage = () => {
   useEffect(() => {
     const jarFromQuery = searchParams.get('jar') || '';
     const monthFromQuery = searchParams.get('month') || '';
-    const dateFromQuery = searchParams.get('date') || '';
     const quickAdd = searchParams.get('quickAdd') === '1';
 
     if (jarFromQuery) setSelectedJarFilter(jarFromQuery);
-    if (dateFromQuery) {
-      setSelectedDateFilter(dateFromQuery);
-      setSelectedMonthFilter(dateFromQuery.slice(0, 7));
-    } else if (monthFromQuery) {
+    if (monthFromQuery) {
       setSelectedMonthFilter(monthFromQuery);
     }
 
     if (quickAdd) {
-      const targetMonth = dateFromQuery?.slice(0, 7) || monthFromQuery || selectedMonthFilter || currentMonth();
+      const targetMonth = monthFromQuery || selectedMonthFilter || currentMonth();
       setForm({
         ...createDefaultForm(targetMonth, jarFromQuery || 'essentials'),
         direction: 'expense'
       });
-      if (dateFromQuery) {
-        setForm((current) => ({ ...current, transaction_date: dateFromQuery }));
-      }
       setEditingId('');
       setIsEditorOpen(true);
     }
@@ -244,7 +235,7 @@ const TransactionsPage = () => {
       amount: form.amount,
       jar_key: form.jar_key || 'essentials',
       direction: form.direction || 'expense',
-      category: isIncomeDirection(form.direction) ? 'uncategorized' : form.category || 'uncategorized',
+      category: form.category || '',
       description: form.description,
       notes: form.notes
     };
@@ -255,14 +246,11 @@ const TransactionsPage = () => {
         setMessage(isIncomeDirection(payload.direction) ? 'Đã cập nhật khoản thu.' : 'Đã cập nhật giao dịch.');
       } else {
         await createTransaction(payload);
-        setMessage(
-          isIncomeDirection(payload.direction) ? 'Đã ghi nhận khoản thu vào hũ.' : 'Đã lưu chi tiêu.'
-        );
+        setMessage(isIncomeDirection(payload.direction) ? 'Đã ghi nhận thu vào hũ.' : 'Đã lưu chi tiêu.');
       }
 
       closeEditor();
       setSelectedMonthFilter(payload.month);
-      setSelectedDateFilter(form.transaction_date);
       await loadTransactions();
     } catch (requestError) {
       setError(requestError.message || 'Không lưu được giao dịch.');
@@ -326,11 +314,10 @@ const TransactionsPage = () => {
     setSearchTerm('');
     setSelectedJarFilter('');
     setSelectedCategoryFilter('');
-    setSelectedDateFilter('');
     setSelectedMonthFilter(availableMonthFilters[0] || currentMonth());
   };
 
-  const hasActiveFilters = searchTerm || selectedJarFilter || selectedCategoryFilter || selectedDateFilter;
+  const hasActiveFilters = searchTerm || selectedJarFilter || selectedCategoryFilter;
 
   return (
     <div className="space-y-4">
@@ -339,60 +326,111 @@ const TransactionsPage = () => {
 
       <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-base font-semibold text-white">Bộ lọc & tìm kiếm</h2>
+          <h2 className="text-base font-semibold text-white">Bộ lọc và tìm kiếm</h2>
           <div className="flex flex-wrap gap-2">
             {hasActiveFilters ? (
-              <button type="button" onClick={clearFilters} className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08]">Xoá bộ lọc</button>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08]"
+              >
+                Xóa bộ lọc
+              </button>
             ) : null}
-            <button type="button" onClick={() => openCreateModal('expense')} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-400"><PlusIcon className="h-3.5 w-3.5" />Chi từ hũ</button>
-            <button type="button" onClick={() => openCreateModal('income_adjustment')} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-400"><PlusIcon className="h-3.5 w-3.5" />Thu vào hũ</button>
+            <button
+              type="button"
+              onClick={() => openCreateModal('expense')}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-400"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              Chi từ hũ
+            </button>
+            <button
+              type="button"
+              onClick={() => openCreateModal('income_adjustment')}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-400"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              Thu vào hũ
+            </button>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-            <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500"><MagnifyingGlassIcon className="h-3.5 w-3.5" />Tìm kiếm</span>
-            <input aria-label="Tìm kiếm giao dịch" name="searchTerm" type="text" placeholder="74k, cafe, trả tiền..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
+            <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              <MagnifyingGlassIcon className="h-3.5 w-3.5" />
+              Tìm kiếm
+            </span>
+            <input
+              aria-label="Tìm kiếm giao dịch"
+              name="searchTerm"
+              type="text"
+              placeholder="74k, cafe, trả tiền..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+            />
           </label>
 
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-            <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500"><FunnelIcon className="h-3.5 w-3.5" />Tháng</span>
-            <select value={selectedMonthFilter} onChange={(event) => setSelectedMonthFilter(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none">
+            <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              <FunnelIcon className="h-3.5 w-3.5" />
+              Tháng
+            </span>
+            <select
+              value={selectedMonthFilter}
+              onChange={(event) => setSelectedMonthFilter(event.target.value)}
+              className="w-full bg-transparent text-sm text-white outline-none"
+            >
               <option value="">Tất cả</option>
-              {availableMonthFilters.map((month) => <option key={month} value={month}>{month}</option>)}
+              {availableMonthFilters.map((month) => (
+                <option key={month} value={month}>
+                  {month}
+                </option>
+              ))}
             </select>
           </label>
 
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
             <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Hũ</span>
-            <select value={selectedJarFilter} onChange={(event) => setSelectedJarFilter(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none">
+            <select
+              value={selectedJarFilter}
+              onChange={(event) => setSelectedJarFilter(event.target.value)}
+              className="w-full bg-transparent text-sm text-white outline-none"
+            >
               <option value="">Tất cả hũ</option>
-              {availableJars.map((jar) => <option key={jar._id} value={jar.jar_key}>{jar.display_name_vi}</option>)}
+              {availableJars.map((jar) => (
+                <option key={jar._id} value={jar.jar_key}>
+                  {jar.display_name_vi}
+                </option>
+              ))}
             </select>
           </label>
 
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
             <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Danh mục</span>
-            <select value={selectedCategoryFilter} onChange={(event) => setSelectedCategoryFilter(event.target.value)} className="w-full bg-transparent text-sm text-white outline-none">
+            <select
+              value={selectedCategoryFilter}
+              onChange={(event) => setSelectedCategoryFilter(event.target.value)}
+              className="w-full bg-transparent text-sm text-white outline-none"
+            >
               <option value="">Tất cả</option>
-              {categoryOptions.map((option) => <option key={option.label} value={option.value || 'uncategorized'}>{option.label}</option>)}
+              {categoryOptions.map((option) => (
+                <option key={option.label} value={option.value || 'uncategorized'}>
+                  {option.label}
+                </option>
+              ))}
             </select>
-          </label>
-
-          <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ngày</span>
-            <input aria-label="Lọc theo ngày" type="date" value={selectedDateFilter} onChange={(event) => { setSelectedDateFilter(event.target.value); if (event.target.value) setSelectedMonthFilter(event.target.value.slice(0, 7)); }} className="w-full bg-transparent text-sm text-white outline-none" />
           </label>
         </div>
       </section>
 
       <TransactionTable
         items={filteredTransactions}
-        title={selectedJarName ? `${selectedJarName} · ${selectedMonthFilter || 'tất cả'}` : 'Giao dịch gần đây'}
-        subtitle={selectedDateFilter ? `Lọc theo ngày ${selectedDateFilter}` : ''}
+        title={selectedJarName ? `${selectedJarName} / ${selectedMonthFilter || 'tất cả'}` : 'Giao dịch gần đây'}
         jarNameByKey={jarNameByKey}
         selectedIds={selectedIds}
-        highlightDate={selectedDateFilter}
         onToggleSelection={handleToggleSelection}
         onToggleSelectAll={handleToggleSelectAll}
         onDeleteSelected={handleDeleteSelected}
@@ -413,7 +451,14 @@ const TransactionsPage = () => {
                     ? 'Thu vào hũ'
                     : 'Ghi chi tiêu'}
               </h2>
-              <button type="button" onClick={closeEditor} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.08] hover:text-white" aria-label="Đóng"><XMarkIcon className="h-5 w-5" /></button>
+              <button
+                type="button"
+                onClick={closeEditor}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.08] hover:text-white"
+                aria-label="Đóng"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 p-5">
@@ -432,7 +477,7 @@ const TransactionsPage = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setForm((current) => ({ ...current, direction: 'income_adjustment', category: '' }))}
+                  onClick={() => setForm((current) => ({ ...current, direction: 'income_adjustment' }))}
                   className={[
                     'flex-1 rounded-lg py-2 text-sm font-medium transition',
                     isIncomeDirection(form.direction)
@@ -447,53 +492,118 @@ const TransactionsPage = () => {
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
                   <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ngày</span>
-                  <input aria-label="Ngày giao dịch" name="transaction_date" type="date" value={form.transaction_date} onChange={handleChange} required className="w-full bg-transparent text-sm text-white outline-none" />
+                  <input
+                    aria-label="Ngày giao dịch"
+                    name="transaction_date"
+                    type="date"
+                    value={form.transaction_date}
+                    onChange={handleChange}
+                    required
+                    className="w-full bg-transparent text-sm text-white outline-none"
+                  />
                 </label>
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Số tiền (nghìn đồng)</span>
-                  <input aria-label="Số tiền" name="amount" type="number" min="0" step="0.1" value={form.amount} onChange={handleChange} required autoFocus placeholder="VD: 100 = 100.000đ" className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                    Số tiền (nghìn đồng)
+                  </span>
+                  <input
+                    aria-label="Số tiền"
+                    name="amount"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={form.amount}
+                    onChange={handleChange}
+                    required
+                    autoFocus
+                    placeholder="VD: 100 = 100.000đ"
+                    className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+                  />
                 </label>
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
                   <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Hũ</span>
-                  <select name="jar_key" value={form.jar_key} onChange={handleChange} required className="w-full bg-transparent text-sm text-white outline-none">
-                    {availableJars.map((jar) => <option key={jar._id} value={jar.jar_key}>{jar.display_name_vi}</option>)}
+                  <select
+                    name="jar_key"
+                    value={form.jar_key}
+                    onChange={handleChange}
+                    required
+                    className="w-full bg-transparent text-sm text-white outline-none"
+                  >
+                    {availableJars.map((jar) => (
+                      <option key={jar._id} value={jar.jar_key}>
+                        {jar.display_name_vi}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
                   <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Mô tả</span>
-                  <input aria-label="Mô tả" name="description" value={form.description} onChange={handleChange} required placeholder={isIncomeDirection(form.direction) ? 'VD: Bạn trả lại 65k' : 'VD: Cafe sáng'} className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
+                  <input
+                    aria-label="Mô tả"
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    required
+                    placeholder={isIncomeDirection(form.direction) ? 'VD: Bạn trả lại 65k' : 'VD: Cafe sáng'}
+                    className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+                  />
                 </label>
               </div>
 
-              {!isIncomeDirection(form.direction) ? (
-                <div>
-                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">Danh mục</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {categoryOptions.map((option) => {
-                      const optionValue = option.value || '';
-                      const isActive = form.category === optionValue;
-                      return (
-                        <button key={option.label} type="button" onClick={() => setForm((current) => ({ ...current, category: optionValue }))} className={['rounded-lg px-3 py-1.5 text-xs font-medium transition', isActive ? 'bg-indigo-500 text-white' : 'border border-white/[0.08] text-slate-400 hover:text-white'].join(' ')}>
-                          {option.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+              <div>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">Phân loại</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {categoryOptions.map((option) => {
+                    const optionValue = option.value || '';
+                    const isActive = form.category === optionValue;
+
+                    return (
+                      <button
+                        key={option.label}
+                        type="button"
+                        onClick={() => setForm((current) => ({ ...current, category: optionValue }))}
+                        className={[
+                          'rounded-lg px-3 py-1.5 text-xs font-medium transition',
+                          isActive
+                            ? 'bg-indigo-500 text-white'
+                            : 'border border-white/[0.08] text-slate-400 hover:text-white'
+                        ].join(' ')}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] px-4 py-3 text-sm text-emerald-300">
-                  Khoản này sẽ được cộng trực tiếp vào hũ bạn chọn.
-                </div>
-              )}
+              </div>
 
               <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
                 <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ghi chú</span>
-                <textarea name="notes" value={form.notes} onChange={handleChange} rows="2" className="w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-slate-600" />
+                <textarea
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  rows="2"
+                  className="w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+                />
               </label>
 
               <div className="flex gap-3 pt-1">
-                <button type="button" onClick={closeEditor} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.06]">Huỷ</button>
-                <button type="submit" className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition ${isIncomeDirection(form.direction) ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-indigo-500 hover:bg-indigo-400'}`}><PencilSquareIcon className="h-4 w-4" />{editingId ? 'Cập nhật' : 'Lưu'}</button>
+                <button
+                  type="button"
+                  onClick={closeEditor}
+                  className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.06]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition ${
+                    isIncomeDirection(form.direction) ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-indigo-500 hover:bg-indigo-400'
+                  }`}
+                >
+                  <PencilSquareIcon className="h-4 w-4" />
+                  {editingId ? 'Cập nhật' : 'Lưu'}
+                </button>
               </div>
             </form>
           </div>
@@ -501,11 +611,21 @@ const TransactionsPage = () => {
       ) : null}
 
       <div className="fixed bottom-20 right-4 z-20 flex flex-col gap-2 lg:hidden">
-        <button type="button" onClick={() => openCreateModal('income_adjustment')} className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-400">
-          <PlusIcon className="h-4 w-4" />Thu vào hũ
+        <button
+          type="button"
+          onClick={() => openCreateModal('income_adjustment')}
+          className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-400"
+        >
+          <PlusIcon className="h-4 w-4" />
+          Thu vào hũ
         </button>
-        <button type="button" onClick={() => openCreateModal('expense')} className="inline-flex items-center gap-2 rounded-full bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/30 transition hover:bg-rose-400">
-          <PlusIcon className="h-4 w-4" />Chi từ hũ
+        <button
+          type="button"
+          onClick={() => openCreateModal('expense')}
+          className="inline-flex items-center gap-2 rounded-full bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/30 transition hover:bg-rose-400"
+        >
+          <PlusIcon className="h-4 w-4" />
+          Chi từ hũ
         </button>
       </div>
 
