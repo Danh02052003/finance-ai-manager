@@ -48,7 +48,7 @@ const RegisterPage = () => {
   return (
     <AuthShell
       title="Tạo tài khoản"
-      subtitle="Mỗi người dùng sẽ có bộ dữ liệu riêng. Tài khoản đầu tiên sẽ nhận dữ liệu hiện có của hệ thống."
+      subtitle="Mỗi người dùng sẽ có bộ dữ liệu riêng. Tài khoản đầu tiên sẽ nhận dữ liệu hiện có và trở thành quản trị cao nhất của ứng dụng."
       submitLabel="Tạo tài khoản"
       footerLabel="Đã có tài khoản?"
       footerLinkLabel="Đăng nhập"

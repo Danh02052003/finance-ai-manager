@@ -5,6 +5,7 @@ export const DEMO_USER_EMAIL = 'demo@finance-ai-manager.local';
 const DEMO_USER = {
   display_name: 'Demo User',
   email: DEMO_USER_EMAIL,
+  role: 'super_admin',
   base_currency: 'VND',
   locale: 'vi-VN',
   timezone: 'Asia/Ho_Chi_Minh',
@@ -89,7 +90,7 @@ export const seedDemoUser = async () => {
   return user;
 };
 
-export const migrateLegacyDemoUser = async ({ displayName, email, passwordHash }) => {
+export const migrateLegacyDemoUser = async ({ displayName, email, passwordHash, role = 'super_admin' }) => {
   const legacyDemoUser = await getLegacyDemoUser();
 
   if (!legacyDemoUser) {
@@ -99,6 +100,7 @@ export const migrateLegacyDemoUser = async ({ displayName, email, passwordHash }
   legacyDemoUser.display_name = displayName;
   legacyDemoUser.email = email;
   legacyDemoUser.password_hash = passwordHash;
+  legacyDemoUser.role = role;
   legacyDemoUser.is_demo = false;
   legacyDemoUser.demo_migrated_at = new Date();
   await legacyDemoUser.save();

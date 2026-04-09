@@ -16,11 +16,28 @@ import monthlyIncomeRoutes from './routes/monthlyIncomeRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
 
 const app = express();
-const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const defaultAllowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://finance-ai-manager.vercel.app'
+];
+const allowedOrigins = (process.env.CLIENT_ORIGIN || defaultAllowedOrigins.join(','))
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
+
+app.set('trust proxy', 1);
 
 app.use(
   cors({
-    origin: clientOrigin,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+    },
     credentials: true
   })
 );

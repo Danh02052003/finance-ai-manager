@@ -14,11 +14,17 @@ const hashSessionToken = (token) => crypto.createHash('sha256').update(token).di
 
 const normalizeEmail = (value) => `${value || ''}`.trim().toLowerCase();
 
+const createError = (message, statusCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
 const requireDisplayName = (value) => {
   const parsedValue = `${value || ''}`.trim();
 
   if (!parsedValue) {
-    throw new Error('display_name is required.');
+    throw createError('display_name is required.', 400);
   }
 
   return parsedValue;
@@ -28,11 +34,11 @@ const requireEmail = (value) => {
   const parsedValue = normalizeEmail(value);
 
   if (!parsedValue) {
-    throw new Error('email is required.');
+    throw createError('email is required.', 400);
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsedValue)) {
-    throw new Error('email is invalid.');
+    throw createError('email is invalid.', 400);
   }
 
   return parsedValue;
@@ -42,7 +48,7 @@ const requirePassword = (value) => {
   const parsedValue = `${value || ''}`;
 
   if (parsedValue.length < PASSWORD_MIN_LENGTH) {
-    throw new Error(`password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
+    throw createError(`password must be at least ${PASSWORD_MIN_LENGTH} characters.`, 400);
   }
 
   return parsedValue;
@@ -52,6 +58,7 @@ export const serializeUser = (user) => ({
   _id: user._id,
   display_name: user.display_name,
   email: user.email,
+  role: user.role || 'user',
   base_currency: user.base_currency,
   locale: user.locale,
   timezone: user.timezone,
@@ -93,10 +100,15 @@ const createSessionRecord = async (user, { ipAddress = '', userAgent = '' } = {}
 
 export const hashPassword = async (password) => bcrypt.hash(password, 12);
 
+const hasAnyRegisteredUsers = async () =>
+  Boolean(
+    await User.exists({
+      password_hash: { $exists: true, $nin: [null, ''] }
+    })
+  );
+
 const maybeMigrateLegacyDemoUser = async ({ displayName, email, passwordHash }) => {
-  const hasRegisteredUsers = await User.exists({
-    password_hash: { $exists: true, $nin: [null, ''] }
-  });
+  const hasRegisteredUsers = await hasAnyRegisteredUsers();
 
   if (hasRegisteredUsers) {
     return null;
@@ -111,7 +123,8 @@ const maybeMigrateLegacyDemoUser = async ({ displayName, email, passwordHash }) 
   return migrateLegacyDemoUser({
     displayName,
     email,
-    passwordHash
+    passwordHash,
+    role: 'super_admin'
   });
 };
 
@@ -123,12 +136,15 @@ export const registerUser = async (payload, sessionMeta = {}) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser?.password_hash) {
-    throw new Error('Email này đã được sử dụng.');
+    throw createError('Email này đã được sử dụng.', 400);
   }
 
   if (existingUser && existingUser.email !== DEMO_USER_EMAIL) {
-    throw new Error('Email này đã được sử dụng.');
+    throw createError('Email này đã được sử dụng.', 400);
   }
+
+  const isFirstRegisteredUser = !(await hasAnyRegisteredUsers());
+  const assignedRole = isFirstRegisteredUser ? 'super_admin' : 'user';
 
   let user =
     (await maybeMigrateLegacyDemoUser({
@@ -142,6 +158,7 @@ export const registerUser = async (payload, sessionMeta = {}) => {
       display_name: displayName,
       email,
       password_hash: passwordHash,
+      role: assignedRole,
       base_currency: 'VND',
       locale: 'vi-VN',
       timezone: 'Asia/Ho_Chi_Minh',
@@ -153,7 +170,10 @@ export const registerUser = async (payload, sessionMeta = {}) => {
   const session = await createSessionRecord(user, sessionMeta);
 
   return {
-    message: 'Đăng ký thành công.',
+    message:
+      assignedRole === 'super_admin'
+        ? 'Đăng ký thành công. Tài khoản này hiện là quản trị cao nhất của ứng dụng.'
+        : 'Đăng ký thành công.',
     data: {
       user: serializeUser(user)
     },
@@ -167,13 +187,13 @@ export const loginUser = async (payload, sessionMeta = {}) => {
   const user = await User.findOne({ email });
 
   if (!user?.password_hash) {
-    throw new Error('Email hoặc mật khẩu không đúng.');
+    throw createError('Email hoặc mật khẩu không đúng.', 401);
   }
 
   const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
   if (!isValidPassword) {
-    throw new Error('Email hoặc mật khẩu không đúng.');
+    throw createError('Email hoặc mật khẩu không đúng.', 401);
   }
 
   const session = await createSessionRecord(user, sessionMeta);
@@ -228,7 +248,7 @@ export const resolveAuthenticatedSession = async (token) => {
 
 export const buildAuthCookieOptions = (expiresAt) => ({
   httpOnly: true,
-  sameSite: 'lax',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   secure: process.env.NODE_ENV === 'production',
   expires: expiresAt,
   path: '/'

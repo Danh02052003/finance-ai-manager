@@ -17,12 +17,7 @@ const applySessionCookie = (res, session) => {
 };
 
 const clearSessionCookie = (res) => {
-  res.clearCookie(AUTH_COOKIE_NAME, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/'
-  });
+  res.clearCookie(AUTH_COOKIE_NAME, buildAuthCookieOptions(new Date(0)));
 };
 
 export const postRegister = async (req, res, next) => {

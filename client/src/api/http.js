@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+  import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:4000/api');
 export const AUTH_UNAUTHORIZED_EVENT = 'finance-auth-unauthorized';
 
 const GET_CACHE_PREFIX = 'finance-api-cache:';

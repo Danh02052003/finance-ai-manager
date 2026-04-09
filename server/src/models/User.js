@@ -18,6 +18,12 @@ const userSchema = new Schema(
       type: String,
       trim: true
     },
+    role: {
+      type: String,
+      trim: true,
+      enum: ['super_admin', 'user'],
+      default: 'user'
+    },
     base_currency: {
       type: String,
       required: true,
