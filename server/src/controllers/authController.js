@@ -13,11 +13,24 @@ const getSessionMeta = (req) => ({
 });
 
 const applySessionCookie = (res, session) => {
-  res.cookie(AUTH_COOKIE_NAME, session.token, buildAuthCookieOptions(session.expiresAt));
+  res.cookie(
+    AUTH_COOKIE_NAME,
+    session.token,
+    buildAuthCookieOptions(session.expiresAt, {
+      requestOrigin: res.req.get('origin') || '',
+      requestProtocol: res.req.protocol
+    })
+  );
 };
 
 const clearSessionCookie = (res) => {
-  res.clearCookie(AUTH_COOKIE_NAME, buildAuthCookieOptions(new Date(0)));
+  res.clearCookie(
+    AUTH_COOKIE_NAME,
+    buildAuthCookieOptions(new Date(0), {
+      requestOrigin: res.req.get('origin') || '',
+      requestProtocol: res.req.protocol
+    })
+  );
 };
 
 export const postRegister = async (req, res, next) => {

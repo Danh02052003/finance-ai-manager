@@ -24,9 +24,7 @@ const JarCard = ({
   dailyBudgetLabel = '',
   warningLabel = '',
   primaryActionLabel = 'Xem lịch sử',
-  secondaryActionLabel = 'Chi từ hũ',
-  onPrimaryAction,
-  onSecondaryAction
+  onPrimaryAction
 }) => {
   const visual = jarVisuals[jar.jar_key] || jarVisuals.essentials;
   const Icon = visual.icon;
@@ -38,27 +36,17 @@ const JarCard = ({
     <article
       className={`group overflow-hidden rounded-2xl border border-white/[0.08] bg-linear-to-br ${visual.gradient} p-5 transition duration-200 hover:border-white/[0.14] hover:shadow-xl hover:shadow-black/10`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <span
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white backdrop-blur"
-            style={{ color: visual.accent }}
-          >
-            <Icon className="h-5 w-5" />
-          </span>
-          <div>
-            <h3 className="text-base font-semibold text-white">{jar.display_name_vi}</h3>
-            <p className="mt-0.5 text-xs text-white/50">{visual.subtitle}</p>
-          </div>
-        </div>
+      <div className="flex items-start gap-3">
         <span
-          className={[
-            'shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold',
-            jar.is_active ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/10 text-slate-400'
-          ].join(' ')}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white backdrop-blur"
+          style={{ color: visual.accent }}
         >
-          {jar.is_active ? 'Hoạt động' : 'Tạm ẩn'}
+          <Icon className="h-5 w-5" />
         </span>
+        <div>
+          <h3 className="text-base font-semibold text-white">{jar.display_name_vi}</h3>
+          <p className="mt-0.5 text-xs text-white/50">{visual.subtitle}</p>
+        </div>
       </div>
 
       <div className="mt-5">
@@ -67,17 +55,19 @@ const JarCard = ({
           {formatCurrency(amount)}
         </p>
 
-        <div className={`mt-4 grid gap-2 ${reserveAmount != null || reserveLabel ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+        <div
+          className={`mt-4 grid gap-2 ${reserveAmount != null || reserveLabel ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}
+        >
           <div className="rounded-lg bg-white/[0.06] px-3 py-2">
             <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">
-              Chi {monthLabel || 'tháng này'}
+            Chi {monthLabel || 'tháng này'}
             </p>
             <p className="mt-0.5 text-sm font-semibold tabular-nums text-rose-300">
               {formatCurrency(spentAmount)}
             </p>
           </div>
           <div className="rounded-lg bg-white/[0.06] px-3 py-2">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">Còn lại</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">C貌n l岷</p>
             <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
               {formatCurrency(remainingAmount ?? amount)}
             </p>
@@ -85,7 +75,7 @@ const JarCard = ({
           {reserveAmount != null || reserveLabel ? (
             <div className="rounded-lg bg-sky-500/10 px-3 py-2">
               <p className="text-[10px] font-medium uppercase tracking-wider text-sky-300/60">
-                {reserveLabel || 'Giữ riêng'}
+              {reserveLabel || 'Giữ riêng'}
               </p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-sky-200">
                 {formatCurrency(reserveAmount || 0)}
@@ -97,7 +87,9 @@ const JarCard = ({
         <div className="mt-4">
           <div className="mb-1.5 flex items-center justify-between text-xs text-white/50">
             <span>Tỷ lệ mục tiêu</span>
-            <span className="font-semibold tabular-nums" style={{ color: visual.accent }}>{resolvedPercentage}%</span>
+            <span className="font-semibold tabular-nums" style={{ color: visual.accent }}>
+              {resolvedPercentage}%
+            </span>
           </div>
           <div className="h-1.5 rounded-full bg-white/[0.08]">
             <div
@@ -123,14 +115,7 @@ const JarCard = ({
         ) : null}
       </div>
 
-      <div className="mt-5 flex gap-2">
-        <button
-          type="button"
-          onClick={() => onSecondaryAction?.(jar)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-        >
-          {secondaryActionLabel}
-        </button>
+      <div className="mt-5">
         <button
           type="button"
           onClick={() => onPrimaryAction?.(jar)}

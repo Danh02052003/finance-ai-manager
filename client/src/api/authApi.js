@@ -1,6 +1,6 @@
 import { apiRequest, clearApiCache } from './http.js';
 
-export const getCurrentUser = () => apiRequest('/auth/me', { skipCache: true });
+export const getCurrentUser = () => apiRequest('/auth/me', { cacheTtlMs: 30 * 1000 });
 
 export const loginUser = async (payload) => {
   const result = await apiRequest('/auth/login', {

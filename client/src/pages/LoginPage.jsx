@@ -1,3 +1,4 @@
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -14,6 +15,7 @@ const LoginPage = () => {
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const redirectTo = location.state?.from || '/dashboard';
 
@@ -30,7 +32,7 @@ const LoginPage = () => {
       await login(form);
       navigate(redirectTo, { replace: true });
     } catch (requestError) {
-      setError(requestError.message || 'Không thể đăng nhập.');
+      setError(requestError.message || 'Kh么ng th峄?膽膬ng nh岷璸.');
     } finally {
       setIsSubmitting(false);
     }
@@ -68,16 +70,26 @@ const LoginPage = () => {
         <span className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
           Mật khẩu
         </span>
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Tối thiểu 8 ký tự"
-          className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
-          required
-        />
+        <div className="flex items-center gap-2">
+          <input
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            value={form.password}
+            onChange={handleChange}
+            placeholder="Tạo mật khẩu tối thiểu 8 ký tự"
+            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? 'Hiển thị mật khẩu' : 'Ẩn mật khẩu'}
+            className="shrink-0 text-slate-500 transition hover:text-white"
+          >
+            {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+          </button>
+        </div>
       </label>
     </AuthShell>
   );

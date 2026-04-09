@@ -25,20 +25,27 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || defaultAllowedOrigins.join(
   .split(',')
   .map((item) => item.trim())
   .filter(Boolean);
+const vercelPreviewPattern = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
+const isAllowedOrigin = (origin) =>
+  allowedOrigins.includes(origin) ||
+  (process.env.ALLOW_VERCEL_PREVIEWS === 'true' && vercelPreviewPattern.test(origin));
 
 app.set('trust proxy', 1);
 
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
 
       callback(new Error(`Origin ${origin} is not allowed by CORS.`));
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204
   })
 );
 app.use(morgan('dev'));

@@ -142,12 +142,6 @@ const JarsPage = () => {
   const previousActualBalanceMap = getActualBalanceMapByMonth(actualBalances, previousSnapshotMonth);
   const previousActualBalanceTotal = sumActualBalanceMonth(actualBalances, previousSnapshotMonth);
 
-  const handleSpendFromJar = (jar) => {
-    const params = new URLSearchParams({ quickAdd: '1', jar: jar.jar_key });
-    if (selectedMonth) params.set('month', selectedMonth);
-    navigate(`/transactions?${params.toString()}`);
-  };
-
   const handleViewJarHistory = (jar) => {
     const params = new URLSearchParams({ jar: jar.jar_key });
     if (selectedMonth) params.set('month', selectedMonth);
@@ -269,7 +263,6 @@ const JarsPage = () => {
                     : `Phân bổ tháng ${selectedMonthLabel}`
                   : 'Chưa có phân bổ tháng này'
               }
-              onSecondaryAction={handleSpendFromJar}
               onPrimaryAction={handleViewJarHistory}
             />
           );

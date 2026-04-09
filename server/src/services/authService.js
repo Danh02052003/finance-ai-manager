@@ -246,10 +246,24 @@ export const resolveAuthenticatedSession = async (token) => {
   };
 };
 
-export const buildAuthCookieOptions = (expiresAt) => ({
-  httpOnly: true,
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-  secure: process.env.NODE_ENV === 'production',
-  expires: expiresAt,
-  path: '/'
-});
+const isHttpsOrigin = (origin = '') => /^https:\/\//i.test(origin);
+
+export const buildAuthCookieOptions = (expiresAt, { requestOrigin = '', requestProtocol = '' } = {}) => {
+  const hasExplicitCookieMode = Boolean(process.env.AUTH_COOKIE_SAME_SITE || process.env.AUTH_COOKIE_SECURE);
+  const inferredCrossSiteCookie =
+    isHttpsOrigin(requestOrigin) &&
+    requestProtocol === 'https';
+  const sameSite = (process.env.AUTH_COOKIE_SAME_SITE || (inferredCrossSiteCookie ? 'none' : 'lax')).toLowerCase();
+  const secure =
+    process.env.AUTH_COOKIE_SECURE != null
+      ? process.env.AUTH_COOKIE_SECURE === 'true'
+      : sameSite === 'none';
+
+  return {
+    httpOnly: true,
+    sameSite,
+    secure,
+    expires: expiresAt,
+    path: '/'
+  };
+};

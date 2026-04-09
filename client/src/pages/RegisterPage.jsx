@@ -1,3 +1,4 @@
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,6 +16,8 @@ const RegisterPage = () => {
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = ({ target: { name, value } }) => {
     setForm((current) => ({ ...current, [name]: value }));
@@ -24,7 +27,7 @@ const RegisterPage = () => {
     event.preventDefault();
 
     if (form.password !== form.confirmPassword) {
-      setError('Mật khẩu nhập lại chưa khớp.');
+      setError('M岷璽 kh岷﹗ nh岷璸 l岷 ch瓢a kh峄沺.');
       return;
     }
 
@@ -39,7 +42,7 @@ const RegisterPage = () => {
       });
       navigate('/dashboard', { replace: true });
     } catch (requestError) {
-      setError(requestError.message || 'Không thể đăng ký.');
+      setError(requestError.message || 'Kh么ng th峄?膽膬ng k媒.');
     } finally {
       setIsSubmitting(false);
     }
@@ -94,32 +97,56 @@ const RegisterPage = () => {
           <span className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
             Mật khẩu
           </span>
-          <input
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            value={form.password}
-            onChange={handleChange}
-            placeholder="Tối thiểu 8 ký tự"
-            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
-            required
-          />
+          <div className="flex items-center gap-2">
+            <input
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Tối thiểu 8 ký tự"
+              className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+              className="shrink-0 text-slate-500 transition hover:text-white"
+            >
+              {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+            </button>
+          </div>
         </label>
 
         <label className="block rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
           <span className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
             Nhập lại mật khẩu
           </span>
-          <input
-            name="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            value={form.confirmPassword}
-            onChange={handleChange}
-            placeholder="Nhập lại mật khẩu"
-            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
-            required
-          />
+          <div className="flex items-center gap-2">
+            <input
+              name="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              placeholder="Nhập lại mật khẩu"
+              className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((current) => !current)}
+              aria-label={showConfirmPassword ? 'Hiển thị mật khẩu' : 'Ẩn mật khẩu'}
+              className="shrink-0 text-slate-500 transition hover:text-white"
+            >
+              {showConfirmPassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
+            </button>
+          </div>
         </label>
       </div>
     </AuthShell>
