@@ -150,31 +150,27 @@ const JarsPage = () => {
 
   return (
     <div className="space-y-5" id="jars-overview" data-assistant-target="jars-overview">
-      <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-white">6 Hũ · {selectedMonthLabel}</h1>
-            <p className="mt-1 text-sm text-slate-500">Xem ngân sách, chi tiêu và số dư của từng hũ.</p>
-          </div>
-          <label className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5">
-            <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-slate-500">Tháng</p>
-            <select
-              aria-label="Chọn tháng"
-              value={selectedMonth}
-              onChange={(event) => setSelectedMonth(event.target.value)}
-              className="w-full bg-transparent text-sm font-semibold text-white outline-none"
-            >
-              {availableMonths.length > 0 ? (
-                availableMonths.map((month) => <option key={month} value={month}>{month}</option>)
-              ) : (
-                <option value="">Chưa có dữ liệu</option>
-              )}
-            </select>
-          </label>
-        </div>
-      </section>
 
-      <section id="jars-summary" data-assistant-target="jars-summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+
+      <section id="jars-summary" data-assistant-target="jars-summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <label className="rounded-2xl border border-indigo-500/15 bg-indigo-500/[0.06] p-4 cursor-pointer hover:bg-indigo-500/[0.1] transition-colors relative">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-indigo-400/70">Kỳ tháng</p>
+          <select
+            aria-label="Chọn tháng"
+            value={selectedMonth}
+            onChange={(event) => setSelectedMonth(event.target.value)}
+            className="mt-2 w-full bg-transparent text-2xl font-bold tabular-nums text-white outline-none cursor-pointer appearance-none"
+          >
+            {availableMonths.length > 0 ? (
+              availableMonths.map((month) => <option key={month} value={month} className="text-slate-900 text-base">{month}</option>)
+            ) : (
+              <option value="" className="text-slate-900 text-base">Trống</option>
+            )}
+          </select>
+          <div className="pointer-events-none absolute right-4 bottom-5 text-indigo-400">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+        </label>
         <article className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Thu nhập</p>
           <p className="mt-2 text-2xl font-bold tabular-nums text-white">{formatCurrency(selectedMonthIncome)}</p>
@@ -193,8 +189,10 @@ const JarsPage = () => {
         </article>
         <article className="rounded-2xl border border-sky-500/15 bg-sky-500/[0.06] p-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-sky-400/70">Giữ riêng</p>
-          <p className="mt-2 text-2xl font-bold tabular-nums text-white">{previousSnapshotMonth ? formatCurrency(previousActualBalanceTotal) : '--'}</p>
-          <p className="mt-1 text-[11px] text-sky-400/50">{previousSnapshotMonth ? `Từ ${previousSnapshotMonth}` : 'Chưa có'}</p>
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <p className="text-2xl font-bold tabular-nums text-white">{previousSnapshotMonth ? formatCurrency(previousActualBalanceTotal) : '--'}</p>
+            <p className="text-[11px] whitespace-nowrap text-sky-400/50">{previousSnapshotMonth ? `Từ ${previousSnapshotMonth}` : ''}</p>
+          </div>
         </article>
       </section>
 
@@ -202,12 +200,7 @@ const JarsPage = () => {
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{error}</div>
       ) : null}
 
-      <section className="rounded-2xl border border-sky-500/15 bg-sky-500/[0.05] p-4 text-sm text-sky-200/80" id="jars-separation-note" data-assistant-target="jars-separation-note">
-        <p className="font-medium text-sky-200">Số dư thực được tách riêng</p>
-        <p className="mt-1 text-xs leading-relaxed text-sky-300/60">
-          Tháng {selectedMonthLabel} chỉ dùng thu nhập và giao dịch của chính nó để tính mức còn lại. Số dư thực giữ riêng từ {previousSnapshotMonth || 'tháng trước'} không cộng vào ngân sách hàng ngày.
-        </p>
-      </section>
+
 
       <section id="jars-cards" data-assistant-target="jars-cards" className="grid gap-4 xl:grid-cols-2">
         {jars.map((jar) => {

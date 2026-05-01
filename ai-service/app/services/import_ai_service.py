@@ -105,3 +105,62 @@ def classify_transactions_with_ai(items: list[dict[str, Any]]) -> dict[str, Any]
         "items": classified_items,
         "provider": ",".join(used_providers),
     }
+
+
+def _build_story_prompt(story: str, context_date: str) -> str:
+    return (
+        "You are an AI that extracts Vietnamese personal finance transactions from a natural language story.\n"
+        "The context date is: " + context_date + ".\n"
+        "If a transaction's date is not mentioned, assume the context date.\n"
+        "If 'hôm qua' (yesterday) is mentioned, context date - 1 day.\n"
+        "If 'hôm bữa' is mentioned, context date - 2 days.\n"
+        "If 'ngày mốt' is mentioned, context date + 2 days.\n"
+        "If the story contains dates in DD/MM or DD/MM/YYYY format, parse them but ALWAYS output the final JSON date in YYYY-MM-DD.\n"
+        "Allowed categories: food_drink, bills, investment, learning, family, charity, uncategorized.\n"
+        "Allowed jars: essentials, long_term_saving, education, enjoyment, financial_freedom, charity.\n"
+        "Jar mapping rules (CRITICAL):\n"
+        "- essentials: daily eating, parking, buying water/drinks.\n"
+        "- enjoyment: having fun, hanging out, snacks, entertainment.\n"
+        "- education: learning new things, courses, books.\n"
+        "- financial_freedom: investing in something.\n"
+        "- charity: giving money to family, relatives, or someone else.\n"
+        "- long_term_saving: ABSOLUTELY FORBIDDEN to touch for daily expenses.\n"
+        "Allowed directions: expense, income_adjustment.\n"
+        "Map Vietnamese shorthands:\n"
+        "- 'k' means thousand (e.g. 50k = 50000).\n"
+        "- 'cá' means thousand (e.g. 1 cá = 1000).\n"
+        "- 'lít' means 100 thousand (e.g. 1 lít = 100000).\n"
+        "- 'củ' means million (e.g. 1 củ = 1000000).\n"
+        "- 'tỏi' means billion (e.g. 1 tỏi = 1000000000).\n"
+        "- 'jack' means 5 million (e.g. 1 jack = 5000000).\n"
+        "- 'Alex' means 50 dollars which equals 1250000 (e.g. 1 Alex = 1250000).\n"
+        "Return minified JSON only. No markdown. No comments.\n"
+        "Return JSON only in this exact shape: "
+        '{"transactions":[{"date":"YYYY-MM-DD","amount":50000,"jar_key":"essentials","direction":"expense","description":"string","category":"food_drink"}]}\n'
+        f"Story:\n{story}"
+    )
+
+
+def extract_transactions_from_story(story: str, context_date: str | None = None) -> dict[str, Any]:
+    from datetime import datetime
+    if not context_date:
+        context_date = datetime.now().strftime("%Y-%m-%d")
+
+    if not story or not story.strip():
+        return {"transactions": []}
+
+    try:
+        response = ask_provider_chain(
+            _build_story_prompt(story, context_date),
+            json_mode=True,
+            preferred_providers=["gemini", "openai", "groq", "claude", "perplexity"],
+            max_output_tokens=1000,
+        )
+        parsed_payload = _extract_json_object(response["text"])
+        return {
+            "transactions": parsed_payload.get("transactions", []),
+            "provider": response["provider"],
+        }
+    except Exception as exc:
+        raise ValueError(f"AI extraction failed: {str(exc)}")
+

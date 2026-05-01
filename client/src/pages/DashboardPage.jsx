@@ -273,21 +273,23 @@ const DashboardPage = () => {
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
                   Phân bổ tháng
                 </p>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-white">{formatCurrency(totalAllocated)}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  từ thu nhập {formatCurrency(selectedMonthIncome)}
-                </p>
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                  <p className="text-2xl font-bold tabular-nums text-white">{formatCurrency(totalAllocated)}</p>
+                  <p className="text-xs whitespace-nowrap text-slate-500">/ {formatCurrency(selectedMonthIncome)}</p>
+                </div>
               </article>
               <article className="rounded-2xl border border-sky-500/15 bg-sky-500/[0.06] p-5">
                 <p className="text-xs font-medium uppercase tracking-wider text-sky-400/70">
                   Giữ riêng
                 </p>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-white">
-                  {previousReserveMonth ? formatCurrency(reserveTotal) : '--'}
-                </p>
-                <p className="mt-1 text-xs text-sky-400/70">
-                  {previousReserveMonth ? `từ tháng ${previousReserveMonth}` : 'Chưa có dữ liệu'}
-                </p>
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                  <p className="text-2xl font-bold tabular-nums text-white">
+                    {previousReserveMonth ? formatCurrency(reserveTotal) : '--'}
+                  </p>
+                  <p className="text-xs whitespace-nowrap text-sky-400/70">
+                    {previousReserveMonth ? `từ ${previousReserveMonth}` : ''}
+                  </p>
+                </div>
               </article>
             </div>
           </div>
@@ -311,7 +313,6 @@ const DashboardPage = () => {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-base font-semibold text-white">Hoạt động gần đây</h2>
-                <p className="mt-0.5 text-xs text-slate-500">Chi tiêu 7 ngày qua</p>
               </div>
               <Link
                 to={`/transactions?month=${selectedMonth}`}
@@ -354,7 +355,7 @@ const DashboardPage = () => {
           </div>
           <h2 className="mt-5 text-xl font-bold text-white">Bắt đầu với kế hoạch tháng</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
-            Nhập thu nhập tháng để hệ thống tự phân bổ 6 hũ. Dashboard sẽ hiển thị số dư, tiến độ chi tiêu và lịch sử giao dịch ngay lập tức.
+            Hệ thống sẽ tự động phân bổ 6 hũ dựa trên thu nhập của bạn.
           </p>
           <Link
             to="/monthly-plan"

@@ -5,3 +5,9 @@ export const chatWithAssistant = (payload) =>
     method: 'POST',
     body: JSON.stringify(payload)
   });
+
+export const extractStory = (payload) =>
+  apiRequest('/assistant/extract-story', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });

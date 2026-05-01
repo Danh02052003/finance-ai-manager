@@ -13,6 +13,7 @@ import {
   updateJarAllocation,
   updateMonthlyIncome
 } from '../api/dashboardApi.js';
+import CurrencyInput from '../components/CurrencyInput.jsx';
 import MonthlyIncomeTable from '../components/MonthlyIncomeTable.jsx';
 import { formatCurrency } from '../components/formatters.js';
 import {
@@ -217,7 +218,7 @@ const MonthlyPlanPage = () => {
     setEditingIncomeId(monthlyIncome._id);
     setIncomeForm({
       month: monthlyIncome.month || '',
-      total_amount: formatMoneyInputValue(monthlyIncome.total_amount),
+      total_amount: monthlyIncome.total_amount?.toString() || '',
       income_date: monthlyIncome.income_date?.slice(0, 10) || `${monthlyIncome.month}-01`,
       source_note: monthlyIncome.source_note || ''
     });
@@ -255,9 +256,6 @@ const MonthlyPlanPage = () => {
             <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Kế hoạch tháng
             </h1>
-            <p className="mt-2 text-sm text-slate-400">
-              Nhập thu nhập để hệ thống tự chia theo 6 hũ mặc định. Bạn chỉ cần cập nhật tổng thu nhập và ghi chú nguồn nếu cần.
-            </p>
             {message ? <p className="mt-3 text-sm text-emerald-300/80">{message}</p> : null}
           </div>
 
@@ -300,15 +298,14 @@ const MonthlyPlanPage = () => {
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
                 <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Tổng thu nhập</span>
-                <input
+                <CurrencyInput
                   name="total_amount"
-                  type="text"
                   value={incomeForm.total_amount}
                   onChange={handleIncomeChange}
                   required
-                  className="w-full bg-transparent text-sm text-white outline-none"
+                  placeholder={moneyInputHint}
+                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
                 />
-                <p className="mt-1.5 text-[11px] text-slate-600">{moneyInputHint}</p>
               </label>
 
               <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
@@ -360,9 +357,6 @@ const MonthlyPlanPage = () => {
             <SparklesIcon className="h-5 w-5" />
           </div>
           <h2 className="mt-4 text-base font-semibold text-white">Tự động chia 6 hũ</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Sau khi lưu thu nhập, hệ thống sẽ tự phân chia ngay theo tỷ lệ mặc định của mô hình 6 hũ.
-          </p>
 
           <div className="mt-4 space-y-3">
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
@@ -375,9 +369,6 @@ const MonthlyPlanPage = () => {
                 {incomeAmountPreview != null ? formatCurrency(incomeAmountPreview) : '--'}
               </p>
             </div>
-            <div className="rounded-xl border border-indigo-500/15 bg-indigo-500/[0.06] p-4 text-sm text-indigo-200">
-              55% chi tiêu cần thiết, 10% cho 4 hũ còn lại và 5% cho từ thiện.
-            </div>
           </div>
         </aside>
       </section>
@@ -385,10 +376,7 @@ const MonthlyPlanPage = () => {
       <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-white">Chi tiết 6 hũ</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Số tiền từng hũ của tháng {focusedIncome?.month || activeMonth}
-            </p>
+            <h2 className="text-base font-semibold text-white">Chi tiết 6 hũ ({focusedIncome?.month || activeMonth})</h2>
           </div>
           <span className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300">
             {formatCurrency(focusedIncomeTotal)}

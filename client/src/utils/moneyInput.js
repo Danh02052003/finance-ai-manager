@@ -12,6 +12,7 @@ export const parseMoneyInputPreview = (value) => {
 
   const sign = rawValue.startsWith('-') ? -1 : 1;
   const unsignedValue = rawValue.replace(/^[+-]/, '').replace(/\s+/g, '');
+  const hasK = unsignedValue.toLowerCase().endsWith('k');
   const sanitizedValue = unsignedValue.replace(/[^\d,.]/g, '');
 
   if (!sanitizedValue || !/\d/.test(sanitizedValue)) {
@@ -24,7 +25,19 @@ export const parseMoneyInputPreview = (value) => {
     return null;
   }
 
-  return sign * (/[,.]/.test(sanitizedValue) ? parsedDigits : parsedDigits * 1000);
+  if (hasK) {
+    return sign * parsedDigits * 1000;
+  }
+
+  if (/[,.]/.test(sanitizedValue)) {
+    return sign * parsedDigits;
+  }
+
+  if (parsedDigits >= 1000) {
+    return sign * parsedDigits;
+  }
+
+  return sign * parsedDigits * 1000;
 };
 
 export const formatMoneyInputValue = (value) => {
@@ -39,5 +52,4 @@ export const formatMoneyInputValue = (value) => {
   }).format(parsedValue);
 };
 
-export const moneyInputHint =
-  'Nhập 83,869 hoặc 83.869 nếu muốn lưu đúng 83.869đ. Nếu nhập 83869 thì app sẽ hiểu là 83.869.000đ.';
+export const moneyInputHint = 'Nhập 50 -> 50.000đ. Nhập 1234 -> 1.234đ. Nhập 1500k -> 1.500.000đ.';

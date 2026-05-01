@@ -382,3 +382,24 @@ export const createAssistantReply = async ({
 
   return payload;
 };
+
+export const extractStoryFromAi = async ({ story, context_date }) => {
+  const response = await fetch(`${getAiServiceBaseUrl()}/import-ai/extract-story`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      story,
+      context_date
+    })
+  });
+
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.detail || payload.message || `AI Extraction failed: ${response.status}`);
+  }
+
+  return payload;
+};

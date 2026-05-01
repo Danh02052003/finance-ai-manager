@@ -59,7 +59,7 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
           <tbody className="divide-y divide-white/[0.04]">
             {items.length > 0 ? (
               items.map((item, index) => (
-                <tr key={item._id || `${item.month}-${index}`} className="transition hover:bg-white/[0.02]">
+                <tr key={item._id || `${item.month}-${index}`} className="group transition hover:bg-white/[0.02]">
                   <td className="px-4 py-3 font-semibold tabular-nums text-white">{item.month || '-'}</td>
                   <td className="px-4 py-3 tabular-nums text-slate-200">
                     {typeof item.total_amount === 'number' ? formatCurrency(item.total_amount) : '-'}
@@ -67,7 +67,7 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
                   <td className="px-4 py-3 text-slate-400">{formatDate(item.income_date)}</td>
                   <td className="px-4 py-3 text-slate-500">{item.source_note || '-'}</td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1.5">
+                    <div className="flex justify-end gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                       <button
                         type="button"
                         onClick={() => onEdit?.(item)}

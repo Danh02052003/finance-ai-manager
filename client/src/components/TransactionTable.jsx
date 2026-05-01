@@ -113,7 +113,7 @@ const groupTransactionsByDay = (items) => {
 };
 
 const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelection, onEdit, onDelete }) => (
-  <div className="grid gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] p-3 transition hover:bg-white/[0.04] md:grid-cols-[auto_80px_minmax(0,1fr)_auto_130px_auto] md:items-center md:gap-4">
+  <div className="group grid gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] p-3 transition hover:bg-white/[0.04] md:grid-cols-[auto_80px_minmax(0,1fr)_auto_130px_auto] md:items-center md:gap-4 relative">
     <label className="inline-flex items-center gap-2 text-sm text-slate-400">
       <input
         aria-label={`Chọn giao dịch ${item.description || index + 1}`}
@@ -157,7 +157,7 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
       {typeof item.amount === 'number' ? formatCurrency(item.amount) : '-'}
     </div>
 
-    <div className="flex items-center justify-end gap-1.5">
+    <div className="flex items-center justify-end gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 absolute right-3 md:relative md:right-0">
       <button
         type="button"
         className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.08] hover:text-white"
@@ -283,8 +283,7 @@ const TransactionTable = ({
         ) : (
           <div className="rounded-xl border border-dashed border-white/[0.08] px-4 py-10 text-center">
             <CheckCircleIcon className="mx-auto h-7 w-7 text-slate-600" />
-            <p className="mt-2 text-sm text-slate-400">Không có giao dịch khớp bộ lọc.</p>
-            <p className="mt-1 text-xs text-slate-500">Thử bỏ bớt điều kiện lọc hoặc ghi thêm giao dịch mới.</p>
+            <p className="mt-2 text-sm text-slate-400">Không có giao dịch.</p>
           </div>
         )}
       </div>

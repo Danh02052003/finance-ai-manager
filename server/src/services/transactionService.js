@@ -5,6 +5,7 @@ import {
   requireDate,
   requireMonth,
   requireNumber,
+  requireMoneyInput,
   requireObjectId,
   requireString,
   resolveJarByKey
@@ -14,10 +15,7 @@ import { applyTransactionImpactToActualBalance } from './yieldService.js';
 const getAiServiceBaseUrl = () => process.env.AI_SERVICE_BASE_URL || 'http://localhost:8000';
 
 const normalizeTransactionAmount = (value) => {
-  const parsedValue = requireNumber(value, 'amount');
-
-  // Manual form inputs use thousand-VND units for faster entry.
-  return parsedValue * 1000;
+  return requireMoneyInput(value, 'amount');
 };
 
 const normalizeDirection = (value) => {

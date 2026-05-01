@@ -6,7 +6,7 @@ import { AuthSession, User } from '../models/index.js';
 import { DEMO_USER_EMAIL, ensureUserJars, getLegacyDemoUser, migrateLegacyDemoUser } from './demoSeedService.js';
 
 export const AUTH_COOKIE_NAME = 'finance_ai_session';
-const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MIN_LENGTH = 6;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_TOUCH_INTERVAL_MS = 1000 * 60 * 15;
 

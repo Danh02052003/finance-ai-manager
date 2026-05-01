@@ -5,6 +5,7 @@ import {
   requireDate,
   requireMonth,
   requireNumber,
+  requireMoneyInput,
   requireObjectId,
   requireString,
   resolveJarByKey
@@ -25,7 +26,7 @@ const buildDebtPayload = async (userId, payload) => {
     to_jar_id: toJar._id,
     to_jar_key: toJar.jar_key,
     month: requireMonth(payload.month),
-    amount: requireNumber(payload.amount, 'amount'),
+    amount: requireMoneyInput(payload.amount, 'amount'),
     debt_date: requireDate(payload.debt_date, 'debt_date'),
     status: requireString(payload.status, 'status'),
     settled_at: parseOptionalDate(payload.settled_at, 'settled_at') || null,
@@ -78,6 +79,36 @@ export const updateDebt = async (userId, debtId, payload) => {
       runValidators: true
     }
   ).lean();
+
+  if (existingDebt.status === 'open' && debtPayload.status === 'settled') {
+    const { createTransaction } = await import('./transactionService.js');
+    const today = new Date().toISOString().slice(0, 10);
+    const reasonText = debtPayload.reason ? ` (${debtPayload.reason})` : '';
+
+    // Transaction 1: Reduce from the jar that owed the money (to_jar_key)
+    await createTransaction(userId, {
+      jar_key: debtPayload.to_jar_key,
+      month: debtPayload.month,
+      transaction_date: debtPayload.settled_at ? new Date(debtPayload.settled_at).toISOString().slice(0, 10) : today,
+      amount: debtPayload.amount,
+      direction: 'expense',
+      category: 'uncategorized',
+      description: `Tự động tất toán nợ${reasonText}`,
+      source: 'auto_debt_settlement'
+    });
+
+    // Transaction 2: Increase back to the jar that lent the money (from_jar_key)
+    await createTransaction(userId, {
+      jar_key: debtPayload.from_jar_key,
+      month: debtPayload.month,
+      transaction_date: debtPayload.settled_at ? new Date(debtPayload.settled_at).toISOString().slice(0, 10) : today,
+      amount: debtPayload.amount,
+      direction: 'income_adjustment',
+      category: 'uncategorized',
+      description: `Tự động tất toán nợ${reasonText}`,
+      source: 'auto_debt_settlement'
+    });
+  }
 
   return {
     message: 'Debt updated successfully.',

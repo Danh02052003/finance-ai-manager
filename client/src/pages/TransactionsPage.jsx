@@ -3,7 +3,8 @@ import {
   MagnifyingGlassIcon,
   PencilSquareIcon,
   PlusIcon,
-  XMarkIcon
+  XMarkIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -15,7 +16,9 @@ import {
   getTransactions,
   updateTransaction
 } from '../api/dashboardApi.js';
+import CurrencyInput from '../components/CurrencyInput.jsx';
 import TransactionTable from '../components/TransactionTable.jsx';
+import AiImportModal from '../components/AiImportModal.jsx';
 
 const todayString = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => todayString().slice(0, 7);
@@ -78,7 +81,6 @@ const parseAmountSearchValue = (value) => {
   return hasCurrencySuffix ? Math.round(parsed) : Math.round(parsed);
 };
 
-const amountForForm = (amount) => (typeof amount === 'number' && !Number.isNaN(amount) ? String(amount / 1000) : '');
 const isIncomeDirection = (value) => value === 'income_adjustment';
 
 const TransactionsPage = () => {
@@ -95,6 +97,7 @@ const TransactionsPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const availableJars = useMemo(() => jars.filter((jar) => jar?.jar_key), [jars]);
@@ -257,11 +260,34 @@ const TransactionsPage = () => {
     }
   };
 
+  const handleSaveBulk = async (drafts) => {
+    try {
+      await Promise.all(
+        drafts.map((draft) =>
+          createTransaction({
+            month: draft.date.slice(0, 7),
+            transaction_date: draft.date,
+            amount: draft.amount,
+            jar_key: draft.jar_key || 'essentials',
+            direction: draft.direction || 'expense',
+            category: draft.category === 'uncategorized' ? '' : draft.category || '',
+            description: draft.description,
+            notes: ''
+          })
+        )
+      );
+      setMessage(`Đã nhập thành công ${drafts.length} giao dịch qua AI.`);
+      await loadTransactions();
+    } catch (err) {
+      throw new Error(err.message || 'Lỗi khi lưu hàng loạt.');
+    }
+  };
+
   const handleEdit = (transaction) => {
     setEditingId(transaction._id);
     setForm({
       transaction_date: transaction.transaction_date?.slice(0, 10) || todayString(),
-      amount: amountForForm(transaction.amount),
+      amount: transaction.amount || '',
       jar_key: transaction.jar_key || 'essentials',
       direction: transaction.direction || 'expense',
       category: transaction.category === 'uncategorized' ? '' : transaction.category || '',
@@ -337,6 +363,14 @@ const TransactionsPage = () => {
                 Xóa bộ lọc
               </button>
             ) : null}
+            <button
+              type="button"
+              onClick={() => setIsAiModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-400"
+            >
+              <SparklesIcon className="h-3.5 w-3.5" />
+              Nhập qua AI
+            </button>
             <button
               type="button"
               onClick={() => openCreateModal('expense')}
@@ -506,17 +540,13 @@ const TransactionsPage = () => {
                   <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
                     Số tiền (nghìn đồng)
                   </span>
-                  <input
-                    aria-label="Số tiền"
+                  <CurrencyInput
                     name="amount"
-                    type="number"
-                    min="0"
-                    step="0.1"
                     value={form.amount}
                     onChange={handleChange}
                     required
                     autoFocus
-                    placeholder="VD: 100 = 100.000đ"
+                    placeholder="VD: 50 -> 50.000đ"
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
                   />
                 </label>
@@ -609,6 +639,13 @@ const TransactionsPage = () => {
           </div>
         </div>
       ) : null}
+
+      <AiImportModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        jars={availableJars}
+        onSaveBulk={handleSaveBulk}
+      />
 
       <div className="fixed bottom-20 right-4 z-20 flex flex-col gap-2 lg:hidden">
         <button
