@@ -59,7 +59,7 @@ const normalizeSearchText = (value) =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/đ/g, 'd')
-    .replace(/[.\s,_-]+/g, '');
+    .replace(/[.,_-]+/g, '');
 
 const parseAmountSearchValue = (value) => {
   const compact = String(value || '').trim().toLowerCase().replace(/\s+/g, '');
@@ -98,6 +98,7 @@ const TransactionsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJarFilter, setSelectedJarFilter] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
+  const [selectedDirectionFilter, setSelectedDirectionFilter] = useState('');
   const [selectedMonthFilter, setSelectedMonthFilter] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -116,34 +117,47 @@ const TransactionsPage = () => {
   );
 
   const filteredTransactions = useMemo(() => {
-    const normalizedQuery = normalizeSearchText(searchTerm);
     const exactAmountQuery = parseAmountSearchValue(searchTerm);
+    const rawQueryTokens = String(searchTerm || '').trim().split(/\s+/).filter(Boolean);
+    const normalizedTokens = rawQueryTokens.map(normalizeSearchText);
 
     return transactions.filter((transaction) => {
       if (selectedJarFilter && transaction.jar_key !== selectedJarFilter) return false;
       if (selectedCategoryFilter && (transaction.category || 'uncategorized') !== selectedCategoryFilter) return false;
+      if (selectedDirectionFilter && transaction.direction !== selectedDirectionFilter) return false;
       if (selectedMonthFilter && transaction.month !== selectedMonthFilter) return false;
-      if (!normalizedQuery) return true;
-      if (exactAmountQuery != null) return Number(transaction.amount) === exactAmountQuery;
+      if (normalizedTokens.length === 0) return true;
 
       const jarName = jars.find((jar) => jar.jar_key === transaction.jar_key)?.display_name_vi || '';
-      const searchBlob = [
+      
+      const dateStr = transaction.transaction_date?.slice?.(0, 10) || '';
+      const [y, m, d] = dateStr.split('-');
+      const vnDate = d && m && y ? `${d}/${m}/${y} ${d}-${m}-${y} ${d}${m}${y}` : '';
+      const amountStr = String(transaction.amount);
+      const amountK = typeof transaction.amount === 'number' ? `${transaction.amount / 1000}k` : '';
+      const amountFormatted = new Intl.NumberFormat('vi-VN').format(transaction.amount);
+
+      const searchBlob = normalizeSearchText([
         transaction.description,
         transaction.notes,
         transaction.jar_key,
         jarName,
         categoryLabels[transaction.category] || transaction.category,
-        transaction.transaction_date?.slice?.(0, 10),
+        dateStr,
+        vnDate,
         transaction.month,
-        transaction.amount,
-        typeof transaction.amount === 'number' ? transaction.amount / 1000 : ''
-      ]
-        .filter(Boolean)
-        .join(' ');
+        amountStr,
+        amountK,
+        amountFormatted,
+        transaction.direction === 'expense' ? 'chi tieu' : 'thu nhap'
+      ].filter(Boolean).join(' '));
 
-      return normalizeSearchText(searchBlob).includes(normalizedQuery);
+      const matchesAmount = exactAmountQuery != null && Number(transaction.amount) === exactAmountQuery;
+      const matchesText = normalizedTokens.every((token) => searchBlob.includes(token));
+
+      return matchesAmount || matchesText;
     });
-  }, [jars, searchTerm, selectedCategoryFilter, selectedJarFilter, selectedMonthFilter, transactions]);
+  }, [jars, searchTerm, selectedCategoryFilter, selectedDirectionFilter, selectedJarFilter, selectedMonthFilter, transactions]);
 
   const selectedJarName = jarNameByKey[selectedJarFilter] || '';
 
@@ -345,10 +359,11 @@ const TransactionsPage = () => {
     setSearchTerm('');
     setSelectedJarFilter('');
     setSelectedCategoryFilter('');
+    setSelectedDirectionFilter('');
     setSelectedMonthFilter(availableMonthFilters[0] || currentMonth());
   };
 
-  const hasActiveFilters = searchTerm || selectedJarFilter || selectedCategoryFilter;
+  const hasActiveFilters = searchTerm || selectedJarFilter || selectedCategoryFilter || selectedDirectionFilter;
 
   return (
     <div className="space-y-4">
@@ -395,7 +410,7 @@ const TransactionsPage = () => {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-3 xl:grid-cols-5">
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
             <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500">
               <MagnifyingGlassIcon className="h-3.5 w-3.5" />
@@ -444,6 +459,19 @@ const TransactionsPage = () => {
                   {jar.display_name_vi}
                 </option>
               ))}
+            </select>
+          </label>
+
+          <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Loại</span>
+            <select
+              value={selectedDirectionFilter}
+              onChange={(event) => setSelectedDirectionFilter(event.target.value)}
+              className="w-full bg-transparent text-sm text-white outline-none"
+            >
+              <option value="">Tất cả</option>
+              <option value="expense">Chi tiêu</option>
+              <option value="income_adjustment">Thu nhập</option>
             </select>
           </label>
 
@@ -572,44 +600,34 @@ const TransactionsPage = () => {
                   </select>
                 </label>
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Mô tả</span>
-                  <input
-                    aria-label="Mô tả"
-                    name="description"
-                    value={form.description}
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Phân loại</span>
+                  <select
+                    name="category"
+                    value={form.category}
                     onChange={handleChange}
-                    required
-                    placeholder={isIncomeDirection(form.direction) ? 'VD: Bạn trả lại 65k' : 'VD: Cafe sáng'}
-                    className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
-                  />
+                    className="w-full bg-transparent text-sm text-white outline-none"
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option.label} value={option.value || ''}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
 
-              <div>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">Phân loại</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {categoryOptions.map((option) => {
-                    const optionValue = option.value || '';
-                    const isActive = form.category === optionValue;
-
-                    return (
-                      <button
-                        key={option.label}
-                        type="button"
-                        onClick={() => setForm((current) => ({ ...current, category: optionValue }))}
-                        className={[
-                          'rounded-lg px-3 py-1.5 text-xs font-medium transition',
-                          isActive
-                            ? 'bg-indigo-500 text-white'
-                            : 'border border-white/[0.08] text-slate-400 hover:text-white'
-                        ].join(' ')}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Mô tả</span>
+                <input
+                  aria-label="Mô tả"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  required
+                  placeholder={isIncomeDirection(form.direction) ? 'VD: Bạn trả lại 65k' : 'VD: Cafe sáng'}
+                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+                />
+              </label>
 
               <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
                 <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ghi chú</span>
