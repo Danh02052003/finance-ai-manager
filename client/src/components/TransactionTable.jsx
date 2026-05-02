@@ -74,13 +74,7 @@ const getAmountToneClass = (item) =>
 
 const getAmountPrefix = (item) => (item.direction === 'income_adjustment' ? '+' : '-');
 
-const getSourceBadge = (item) => {
-  if (item.source === 'momo_yield') {
-    return 'Lãi MoMo';
-  }
 
-  return '';
-};
 
 const groupTransactionsByDay = (items) => {
   const groups = items.reduce((accumulator, item) => {
@@ -152,11 +146,6 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
         {item.is_ai_classified ? <SparklesIcon className="h-3 w-3 text-indigo-400" title="Phân loại bởi AI" /> : null}
         {categoryLabels[item.category] || categoryLabels.uncategorized}
       </span>
-      {getSourceBadge(item) ? (
-        <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
-          {getSourceBadge(item)}
-        </span>
-      ) : null}
     </div>
 
     <div className={`hidden text-right text-sm font-semibold tabular-nums md:block ${getAmountToneClass(item)}`}>

@@ -134,7 +134,7 @@ const JarsPage = () => {
   }, {});
   const selectedMonthAllocationTotal = selectedMonthAllocations.reduce((sum, item) => sum + (item.allocated_amount || 0), 0);
   const selectedMonthSpentTotal = selectedMonthTransactions.reduce((sum, item) => sum + (item.direction === 'expense' ? item.amount || 0 : 0), 0);
-  const selectedMonthNetYieldTotal = selectedMonthTransactions.reduce((sum, item) => sum + (item.direction === 'income_adjustment' && item.source === 'momo_yield' ? item.amount || 0 : 0), 0);
+
   const selectedMonthIncome = monthlyIncomes.find((item) => item.month === selectedMonth)?.total_amount || 0;
   const selectedMonthLabel = selectedMonth || 'Chưa chọn';
   const monthMetrics = getMonthMetrics(selectedMonth);
@@ -183,10 +183,7 @@ const JarsPage = () => {
           <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Đã chi</p>
           <p className="mt-2 text-2xl font-bold tabular-nums text-white">{formatCurrency(selectedMonthSpentTotal)}</p>
         </article>
-        <article className="rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-400/70">Lãi ròng</p>
-          <p className="mt-2 text-2xl font-bold tabular-nums text-white">{formatCurrency(selectedMonthNetYieldTotal)}</p>
-        </article>
+
         <article className="rounded-2xl border border-sky-500/15 bg-sky-500/[0.06] p-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-sky-400/70">Giữ riêng</p>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
