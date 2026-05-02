@@ -1,8 +1,4 @@
-import {
-  ArrowPathIcon,
-  BanknotesIcon,
-  DocumentDuplicateIcon
-} from '@heroicons/react/24/outline';
+import { ArrowPathIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -10,7 +6,6 @@ import {
   createJarActualBalance,
   getJarActualBalances,
   getJars,
-  getTransactions,
   updateJarActualBalance
 } from '../api/dashboardApi.js';
 import { formatCurrency } from '../components/formatters.js';
@@ -26,39 +21,6 @@ import {
   parseMoneyInputPreview
 } from '../utils/moneyInput.js';
 
-const DEFAULT_MOMO_YIELD_RATE = 4.5;
-
-const buildDateKey = (value) => {
-  const parsedValue = value instanceof Date ? value : new Date(value);
-
-  if (Number.isNaN(parsedValue.getTime())) {
-    return '';
-  }
-
-  const year = parsedValue.getFullYear();
-  const month = String(parsedValue.getMonth() + 1).padStart(2, '0');
-  const day = String(parsedValue.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-};
-
-const formatDisplayDate = (value) => {
-  const parsedValue = value instanceof Date ? value : new Date(value);
-
-  if (Number.isNaN(parsedValue.getTime())) {
-    return '--';
-  }
-
-  return new Intl.DateTimeFormat('vi-VN').format(parsedValue);
-};
-
-const getYesterdayDate = () => {
-  const yesterday = new Date();
-  yesterday.setHours(0, 0, 0, 0);
-  yesterday.setDate(yesterday.getDate() - 1);
-  return yesterday;
-};
-
 const buildFormState = (jars, actualBalanceMap) =>
   Object.fromEntries(
     jars.map((jar) => {
@@ -69,8 +31,7 @@ const buildFormState = (jars, actualBalanceMap) =>
         {
           id: existingRecord?._id || '',
           actual_balance_amount: existingRecord ? formatMoneyInputValue(existingRecord.actual_balance_amount) : '',
-          note: existingRecord?.note || '',
-          last_yield_processed_at: existingRecord?.last_yield_processed_at?.slice?.(0, 10) || ''
+          note: existingRecord?.note || ''
         }
       ];
     })
@@ -79,31 +40,22 @@ const buildFormState = (jars, actualBalanceMap) =>
 const ActualBalancesPage = () => {
   const [jars, setJars] = useState([]);
   const [actualBalances, setActualBalances] = useState([]);
-  const [transactions, setTransactions] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthValue());
   const [formState, setFormState] = useState({});
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [savingJarKey, setSavingJarKey] = useState('');
-  const [usesMomoWallet, setUsesMomoWallet] = useState(true);
-  const [sharedYieldRateAnnual, setSharedYieldRateAnnual] = useState(String(DEFAULT_MOMO_YIELD_RATE));
-
-  const yesterdayDate = useMemo(() => getYesterdayDate(), []);
-  const yesterdayDateKey = useMemo(() => buildDateKey(yesterdayDate), [yesterdayDate]);
-  const yesterdayLabel = useMemo(() => formatDisplayDate(yesterdayDate), [yesterdayDate]);
 
   const loadActualBalanceData = async () => {
     try {
-      const [jarResponse, actualBalanceResponse, transactionResponse] = await Promise.all([
+      const [jarResponse, actualBalanceResponse] = await Promise.all([
         getJars(),
-        getJarActualBalances(),
-        getTransactions()
+        getJarActualBalances()
       ]);
 
       setJars(Array.isArray(jarResponse.data) ? jarResponse.data : []);
       setActualBalances(Array.isArray(actualBalanceResponse.data) ? actualBalanceResponse.data : []);
-      setTransactions(Array.isArray(transactionResponse.data) ? transactionResponse.data : []);
       setError('');
     } catch (requestError) {
       setError(requestError.message || 'Không thể tải dữ liệu.');
@@ -118,60 +70,20 @@ const ActualBalancesPage = () => {
     () => getActualBalanceMapByMonth(actualBalances, selectedMonth),
     [actualBalances, selectedMonth]
   );
+  
   const previousMonth = useMemo(
     () => getPreviousActualBalanceMonth(actualBalances, selectedMonth),
     [actualBalances, selectedMonth]
   );
+  
   const previousMonthActualBalanceMap = useMemo(
     () => getActualBalanceMapByMonth(actualBalances, previousMonth),
     [actualBalances, previousMonth]
   );
-  const selectedMonthRecords = useMemo(
-    () => jars.map((jar) => selectedMonthActualBalanceMap.get(jar.jar_key)).filter(Boolean),
-    [jars, selectedMonthActualBalanceMap]
-  );
-
-  const selectedMonthYieldTransactions = useMemo(
-    () =>
-      (transactions || []).filter(
-        (item) => item?.source === 'momo_yield' && item?.month === selectedMonth && item?.jar_key
-      ),
-    [transactions, selectedMonth]
-  );
-
-  const effectiveYieldTransactions = useMemo(
-    () => (usesMomoWallet ? selectedMonthYieldTransactions : []),
-    [selectedMonthYieldTransactions, usesMomoWallet]
-  );
-
-  const yesterdayYieldTransactions = useMemo(
-    () =>
-      effectiveYieldTransactions.filter((item) => buildDateKey(item.transaction_date) === yesterdayDateKey),
-    [effectiveYieldTransactions, yesterdayDateKey]
-  );
-
-  const yesterdayYieldByJar = useMemo(() => {
-    const map = new Map();
-
-    yesterdayYieldTransactions.forEach((item) => {
-      const currentAmount = map.get(item.jar_key) || 0;
-      map.set(item.jar_key, currentAmount + Number(item.amount || 0));
-    });
-
-    return map;
-  }, [yesterdayYieldTransactions]);
 
   useEffect(() => {
     setFormState(buildFormState(jars, selectedMonthActualBalanceMap));
-
-    const firstRateRecord = selectedMonthRecords.find((item) => item?.yield_rate_annual != null);
-    setUsesMomoWallet(selectedMonthRecords.length ? selectedMonthRecords.some((item) => item.yield_enabled) : true);
-    setSharedYieldRateAnnual(
-      firstRateRecord?.yield_rate_annual != null
-        ? String(firstRateRecord.yield_rate_annual)
-        : String(DEFAULT_MOMO_YIELD_RATE)
-    );
-  }, [jars, selectedMonthActualBalanceMap, selectedMonthRecords]);
+  }, [jars, selectedMonthActualBalanceMap]);
 
   const selectedMonthTotal = useMemo(
     () =>
@@ -186,37 +98,6 @@ const ActualBalancesPage = () => {
     () => sumActualBalanceMonth(actualBalances, previousMonth),
     [actualBalances, previousMonth]
   );
-
-  const yesterdayYieldTotal = useMemo(
-    () => yesterdayYieldTransactions.reduce((sum, item) => sum + Number(item.amount || 0), 0),
-    [yesterdayYieldTransactions]
-  );
-
-  const yesterdayYieldJarCount = useMemo(() => yesterdayYieldByJar.size, [yesterdayYieldByJar]);
-
-  const latestYieldRunLabel = useMemo(() => {
-    if (!usesMomoWallet) {
-      return '--';
-    }
-
-    const timestamps = selectedMonthRecords
-      .map((item) => item?.last_yield_processed_at)
-      .filter(Boolean)
-      .map((value) => new Date(value))
-      .filter((value) => !Number.isNaN(value.getTime()));
-
-    if (!timestamps.length) {
-      return '--';
-    }
-
-    const latestTimestamp = timestamps.reduce((latest, current) =>
-      current.getTime() > latest.getTime() ? current : latest
-    );
-
-    return formatDisplayDate(latestTimestamp);
-  }, [selectedMonthRecords, usesMomoWallet]);
-
-  const normalizedSharedYieldRate = Number(sharedYieldRateAnnual || DEFAULT_MOMO_YIELD_RATE);
 
   const handleFieldChange = (jarKey, fieldName, value) => {
     setFormState((currentState) => ({
@@ -235,9 +116,7 @@ const ActualBalancesPage = () => {
       month: selectedMonth,
       jar_key: jarKey,
       actual_balance_amount: row.actual_balance_amount,
-      note: row.note,
-      yield_enabled: usesMomoWallet,
-      yield_rate_annual: normalizedSharedYieldRate
+      note: row.note
     };
   };
 
@@ -310,11 +189,6 @@ const ActualBalancesPage = () => {
       return;
     }
 
-    const previousMonthRecords = jars
-      .map((jar) => previousMonthActualBalanceMap.get(jar.jar_key))
-      .filter(Boolean);
-    const firstRateRecord = previousMonthRecords.find((item) => item?.yield_rate_annual != null);
-
     setFormState((currentState) =>
       Object.fromEntries(
         jars.map((jar) => {
@@ -327,20 +201,13 @@ const ActualBalancesPage = () => {
               actual_balance_amount: previousRecord
                 ? formatMoneyInputValue(previousRecord.actual_balance_amount)
                 : currentState[jar.jar_key]?.actual_balance_amount || '',
-              note: previousRecord?.note || currentState[jar.jar_key]?.note || '',
-              last_yield_processed_at: currentState[jar.jar_key]?.last_yield_processed_at || ''
+              note: previousRecord?.note || currentState[jar.jar_key]?.note || ''
             }
           ];
         })
       )
     );
 
-    setUsesMomoWallet(previousMonthRecords.length ? previousMonthRecords.some((item) => item.yield_enabled) : true);
-    setSharedYieldRateAnnual(
-      firstRateRecord?.yield_rate_annual != null
-        ? String(firstRateRecord.yield_rate_annual)
-        : String(DEFAULT_MOMO_YIELD_RATE)
-    );
     setMessage(`Đã sao chép dữ liệu từ tháng ${previousMonth}. Nhớ lưu lại để tạo snapshot mới.`);
     setError('');
   };
@@ -358,8 +225,7 @@ const ActualBalancesPage = () => {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Số dư thực tế</h1>
             <p className="mt-2 max-w-lg text-sm text-slate-400">
-              Ghi nhận số tiền thực đang giữ theo từng hũ. Lãi MoMo sẽ tự cộng hằng ngày nếu bạn bật
-              Túi Thần Tài.
+              Ghi nhận số tiền thực đang giữ theo từng hũ.
             </p>
             {message ? <p className="mt-3 text-sm text-emerald-300/80">{message}</p> : null}
 
@@ -380,30 +246,6 @@ const ActualBalancesPage = () => {
                 <p className="mt-0.5 text-[11px] text-slate-500">{previousMonth ? `Từ ${previousMonth}` : 'Chưa có'}</p>
               </div>
             </div>
-
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-300/70">
-                  Tổng lãi cộng hôm qua
-                </p>
-                <p className="mt-1 text-lg font-bold tabular-nums text-white">{formatCurrency(yesterdayYieldTotal)}</p>
-                <p className="mt-0.5 text-[11px] text-emerald-200/70">{yesterdayLabel}</p>
-              </div>
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.06] p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Số hũ được cộng</p>
-                <p className="mt-1 text-lg font-bold tabular-nums text-white">
-                  {yesterdayYieldJarCount}/{jars.length || 0}
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-500">{yesterdayLabel}</p>
-              </div>
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.06] p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Lần chạy gần nhất</p>
-                <p className="mt-1 text-lg font-bold tabular-nums text-white">{latestYieldRunLabel}</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">
-                  {usesMomoWallet ? 'Đang bật Túi Thần Tài' : 'Đang tắt Túi Thần Tài'}
-                </p>
-              </div>
-            </div>
           </div>
 
           <div
@@ -411,15 +253,6 @@ const ActualBalancesPage = () => {
             data-assistant-target="actual-balances-rule"
             className="rounded-2xl border border-white/[0.08] bg-black/20 p-5 backdrop-blur"
           >
-            <div className="flex items-center gap-3">
-              <span className="rounded-lg bg-emerald-500/15 p-2.5 text-emerald-300">
-                <BanknotesIcon className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-white">Thiết lập chung</p>
-              </div>
-            </div>
-
             <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.04] p-3 text-xs leading-relaxed text-slate-400">
               <p>{moneyInputHint}</p>
               <p className="mt-2">Ví dụ: `83,869` = 83.869đ, `83869` = 83.869.000đ</p>
@@ -434,50 +267,6 @@ const ActualBalancesPage = () => {
                   onChange={(event) => setSelectedMonth(event.target.value)}
                   className="w-full bg-transparent text-sm text-white outline-none"
                 />
-              </label>
-
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.04] px-3 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Dùng Túi Thần Tài MoMo</p>
-                <div className="mt-3 inline-flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
-                  <button
-                    type="button"
-                    onClick={() => setUsesMomoWallet(true)}
-                    className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                      usesMomoWallet ? 'bg-emerald-500 text-white' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Có
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUsesMomoWallet(false)}
-                    className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                      !usesMomoWallet ? 'bg-white/[0.08] text-white' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Không
-                  </button>
-                </div>
-              </div>
-
-              <label className="block rounded-xl border border-white/[0.06] bg-white/[0.04] px-3 py-2.5">
-                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                  Lãi suất năm (%)
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={sharedYieldRateAnnual}
-                  onChange={(event) => setSharedYieldRateAnnual(event.target.value)}
-                  disabled={!usesMomoWallet}
-                  className="w-full bg-transparent text-sm text-white outline-none"
-                />
-                <p className="mt-1.5 text-[11px] text-slate-500">
-                  {usesMomoWallet
-                    ? 'Mặc định 4.5%/năm và áp dụng cho toàn bộ hũ trong tháng này.'
-                    : 'Đang tắt MoMo nên hiện không cộng lãi.'}
-                </p>
               </label>
 
               <div className="flex flex-wrap gap-2">
@@ -515,13 +304,11 @@ const ActualBalancesPage = () => {
           const row = formState[jar.jar_key] || {
             id: '',
             actual_balance_amount: '',
-            note: '',
-            last_yield_processed_at: ''
+            note: ''
           };
           const previewAmount = parseMoneyInputPreview(row.actual_balance_amount);
           const previousRecord = previousMonthActualBalanceMap.get(jar.jar_key);
           const isSavingJar = savingJarKey === jar.jar_key;
-          const yesterdayYieldAmount = yesterdayYieldByJar.get(jar.jar_key) || 0;
 
           return (
             <article key={jar.jar_key} className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
@@ -539,7 +326,7 @@ const ActualBalancesPage = () => {
                 </span>
               </div>
 
-              <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
                   <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Số dư tháng trước</p>
                   <p className="mt-1 text-lg font-bold tabular-nums text-white">
@@ -552,11 +339,6 @@ const ActualBalancesPage = () => {
                   <p className="mt-1 text-lg font-bold tabular-nums text-white">
                     {previewAmount != null ? formatCurrency(previewAmount) : '--'}
                   </p>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Lãi cộng hôm qua</p>
-                  <p className="mt-1 text-lg font-bold tabular-nums text-white">{formatCurrency(yesterdayYieldAmount)}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">{yesterdayLabel}</p>
                 </div>
               </div>
 
@@ -580,13 +362,6 @@ const ActualBalancesPage = () => {
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
                   />
                 </label>
-
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Lần chạy lãi gần nhất</p>
-                  <p className="mt-1.5 text-sm text-white">
-                    {row.last_yield_processed_at ? formatDisplayDate(row.last_yield_processed_at) : '--'}
-                  </p>
-                </div>
               </div>
 
               <div className="mt-4 flex gap-2">

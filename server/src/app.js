@@ -4,11 +4,11 @@ import morgan from 'morgan';
 
 import authRoutes from './routes/authRoutes.js';
 import assistantRoutes from './routes/assistantRoutes.js';
-import dashboardRoutes from './routes/dashboardRoutes.js';
+
 import jarActualBalanceRoutes from './routes/jarActualBalanceRoutes.js';
 import debtRoutes from './routes/debtRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
-import importRoutes from './routes/importRoutes.js';
+
 import jarAllocationRoutes from './routes/jarAllocationRoutes.js';
 import jarRoutes from './routes/jarRoutes.js';
 import { attachAuth, requireAuth } from './middleware/authMiddleware.js';
@@ -57,10 +57,10 @@ app.use('/api/health', healthRoutes);
 
 app.use(requireAuth);
 app.use('/api/assistant', assistantRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+
 app.use('/api/jars', jarRoutes);
 app.use('/api/jar-actual-balances', jarActualBalanceRoutes);
-app.use('/api/import', importRoutes);
+
 app.use('/api/monthly-incomes', monthlyIncomeRoutes);
 app.use('/api/jar-allocations', jarAllocationRoutes);
 app.use('/api/transactions', transactionRoutes);

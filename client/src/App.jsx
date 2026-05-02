@@ -4,9 +4,8 @@ import GuestOnlyRoute from './components/auth/GuestOnlyRoute.jsx';
 import RequireAuth from './components/auth/RequireAuth.jsx';
 import Layout from './components/Layout.jsx';
 import ActualBalancesPage from './pages/ActualBalancesPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
 import DebtsPage from './pages/DebtsPage.jsx';
-import ImportExcel from './pages/ImportExcel.jsx';
+
 import JarsPage from './pages/JarsPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import MonthlyPlanPage from './pages/MonthlyPlanPage.jsx';
@@ -22,15 +21,13 @@ const App = () => (
 
     <Route element={<RequireAuth />}>
       <Route element={<Layout />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/" element={<Navigate to="/transactions" replace />} />
         <Route path="/actual-balances" element={<ActualBalancesPage />} />
-        <Route path="/import" element={<ImportExcel />} />
         <Route path="/monthly-plan" element={<MonthlyPlanPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/debts" element={<DebtsPage />} />
         <Route path="/jars" element={<JarsPage />} />
-        <Route path="/settings" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/settings" element={<Navigate to="/transactions" replace />} />
       </Route>
     </Route>
   </Routes>

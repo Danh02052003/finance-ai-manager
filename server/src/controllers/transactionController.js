@@ -4,7 +4,7 @@ import {
   listTransactions,
   updateTransaction
 } from '../services/transactionService.js';
-import { reclassifyImportedTransactions } from '../services/importExcelService.js';
+import { reclassifyImportedTransactions } from '../services/aiClassificationService.js';
 
 export const getTransactions = async (req, res, next) => {
   try {

@@ -10,7 +10,7 @@ import {
   requireString,
   resolveJarByKey
 } from './mvpDataService.js';
-import { applyTransactionImpactToActualBalance } from './yieldService.js';
+import { applyTransactionImpactToActualBalance } from './jarActualBalanceService.js';
 
 const getAiServiceBaseUrl = () => process.env.AI_SERVICE_BASE_URL || 'http://localhost:8000';
 

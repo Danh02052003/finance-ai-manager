@@ -46,13 +46,6 @@ const Header = ({ onOpenSidebar }) => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              to="/transactions?quickAdd=1"
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 active:scale-[0.97]"
-            >
-              <PlusIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Ghi chi tiêu</span>
-            </Link>
           </div>
         </div>
       </div>

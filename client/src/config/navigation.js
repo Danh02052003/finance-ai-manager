@@ -9,16 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export const navigationItems = [
-  {
-    to: '/dashboard',
-    label: 'Tổng quan',
-    shortLabel: 'Tổng quan',
-    title: 'Tổng quan tài chính',
-    description: 'Xem nhanh sức khoẻ tài chính tháng này: số dư, 6 hũ, và chi tiêu gần đây.',
-    icon: HomeIcon,
-    group: 'core',
-    showInBottomNav: true
-  },
+
   {
     to: '/transactions',
     label: 'Giao dịch',
@@ -68,17 +59,7 @@ export const navigationItems = [
     icon: CircleStackIcon,
     group: 'manage',
     showInBottomNav: false
-  },
-  {
-    to: '/import',
-    label: 'Nhập dữ liệu',
-    shortLabel: 'Nhập',
-    title: 'Nhập từ Excel',
-    description: 'Đưa dữ liệu từ file Excel cũ vào hệ thống.',
-    icon: ArrowDownTrayIcon,
-    group: 'tools',
-    showInBottomNav: false
-  }
+
 ];
 
 export const getPageMeta = (pathname) =>
