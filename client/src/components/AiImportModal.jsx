@@ -156,6 +156,11 @@ const AiImportModal = ({ isOpen, onClose, jars, onSaveBulk }) => {
                             <option value="learning">Học tập</option>
                             <option value="family">Gia đình</option>
                             <option value="charity">Từ thiện</option>
+                            <option value="personal_care">Chăm sóc cá nhân</option>
+                            <option value="shopping">Mua sắm</option>
+                            <option value="transport">Di chuyển</option>
+                            <option value="health">Sức khỏe</option>
+                            <option value="entertainment">Giải trí</option>
                           </select>
                         </td>
                         <td className="px-2 py-2 text-right">

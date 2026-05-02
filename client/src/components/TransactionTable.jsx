@@ -13,6 +13,11 @@ const categoryLabels = {
   learning: 'Học tập',
   family: 'Gia đình',
   charity: 'Từ thiện',
+  personal_care: 'Chăm sóc cá nhân',
+  shopping: 'Mua sắm',
+  transport: 'Di chuyển',
+  health: 'Sức khỏe',
+  entertainment: 'Giải trí',
   uncategorized: 'Chưa phân loại'
 };
 

@@ -41,7 +41,12 @@ const categoryOptions = [
   { value: 'investment', label: 'Đầu tư' },
   { value: 'learning', label: 'Học tập' },
   { value: 'family', label: 'Gia đình' },
-  { value: 'charity', label: 'Từ thiện' }
+  { value: 'charity', label: 'Từ thiện' },
+  { value: 'personal_care', label: 'Chăm sóc cá nhân' },
+  { value: 'shopping', label: 'Mua sắm' },
+  { value: 'transport', label: 'Di chuyển' },
+  { value: 'health', label: 'Sức khỏe' },
+  { value: 'entertainment', label: 'Giải trí' }
 ];
 
 const categoryLabels = Object.fromEntries(

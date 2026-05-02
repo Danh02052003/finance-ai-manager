@@ -12,6 +12,11 @@ ALLOWED_CATEGORIES = {
     "learning",
     "family",
     "charity",
+    "personal_care",
+    "shopping",
+    "transport",
+    "health",
+    "entertainment",
     "uncategorized",
 }
 
@@ -20,7 +25,7 @@ def _build_prompt(items: list[dict[str, Any]]) -> str:
     return (
         "You classify Vietnamese personal finance transactions for a 6-jar budgeting app.\n"
         "Each item is already one transaction.\n"
-        "Allowed categories only: food_drink, bills, investment, learning, family, charity, uncategorized.\n"
+        "Allowed categories only: food_drink, bills, investment, learning, family, charity, personal_care, shopping, transport, health, entertainment, uncategorized.\n"
         "Use description as the main signal. If uncertain choose uncategorized.\n"
         "Important hints for Vietnamese shorthand:\n"
         "- 4g, 5g, nap dt, nap dien thoai, netflix, internet, wifi => bills\n"
@@ -29,6 +34,11 @@ def _build_prompt(items: list[dict[str, Any]]) -> str:
         "- chung khoan, co phieu, dau tu, workshop => investment\n"
         "- sach, khoa hoc, hoc phi => learning\n"
         "- tu thien, ung ho, donate => charity\n"
+        "- sua tam, my pham, cat toc, lam dep, cham soc => personal_care\n"
+        "- quan ao, giay dep, shopee, lazada => shopping\n"
+        "- do xang, grab, be, xanh sm, ve xe => transport\n"
+        "- kham benh, mua thuoc, vien phi => health\n"
+        "- xem phim, netflix, du lich, game, giai tri => entertainment\n"
         "Return minified JSON only. No markdown. No comments. No trailing commas.\n"
         "Return JSON only in this exact shape: "
         '{"items":[{"id":"same id","category":"one_allowed_category"}]}\n'
@@ -116,15 +126,15 @@ def _build_story_prompt(story: str, context_date: str) -> str:
         "If 'hôm bữa' is mentioned, context date - 2 days.\n"
         "If 'ngày mốt' is mentioned, context date + 2 days.\n"
         "If the story contains dates in DD/MM or DD/MM/YYYY format, parse them but ALWAYS output the final JSON date in YYYY-MM-DD.\n"
-        "Allowed categories: food_drink, bills, investment, learning, family, charity, uncategorized.\n"
-        "Allowed jars: essentials, long_term_saving, education, enjoyment, financial_freedom, charity.\n"
+        "Allowed categories: food_drink, bills, investment, learning, family, charity, personal_care, shopping, transport, health, entertainment, uncategorized.\n"
+        "Allowed jars: essentials, education, enjoyment, financial_freedom, charity.\n"
         "Jar mapping rules (CRITICAL):\n"
         "- essentials: daily eating, parking, buying water/drinks.\n"
         "- enjoyment: having fun, hanging out, snacks, entertainment.\n"
         "- education: learning new things, courses, books.\n"
         "- financial_freedom: investing in something.\n"
         "- charity: giving money to family, relatives, or someone else.\n"
-        "- long_term_saving: ABSOLUTELY FORBIDDEN to touch for daily expenses.\n"
+        "NEVER use long_term_saving or any saving jar. It is strictly forbidden for daily expenses.\n"
         "Allowed directions: expense, income_adjustment.\n"
         "Map Vietnamese shorthands:\n"
         "- 'k' means thousand (e.g. 50k = 50000).\n"
