@@ -5,11 +5,11 @@ import { AUTH_UNAUTHORIZED_EVENT } from '../api/http.js';
 
 const AuthContext = createContext(null);
 const AUTH_USER_CACHE_KEY = 'finance-auth-user-cache';
-const AUTH_USER_CACHE_TTL_MS = 1000 * 60 * 10;
+const AUTH_USER_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 const readCachedAuthUser = () => {
   try {
-    const rawValue = window.sessionStorage.getItem(AUTH_USER_CACHE_KEY);
+    const rawValue = window.localStorage.getItem(AUTH_USER_CACHE_KEY);
 
     if (!rawValue) {
       return null;
@@ -22,7 +22,7 @@ const readCachedAuthUser = () => {
     }
 
     if (!parsedValue.timestamp || Date.now() - parsedValue.timestamp > AUTH_USER_CACHE_TTL_MS) {
-      window.sessionStorage.removeItem(AUTH_USER_CACHE_KEY);
+      window.localStorage.removeItem(AUTH_USER_CACHE_KEY);
       return null;
     }
 
@@ -35,11 +35,11 @@ const readCachedAuthUser = () => {
 const writeCachedAuthUser = (user) => {
   try {
     if (!user?._id) {
-      window.sessionStorage.removeItem(AUTH_USER_CACHE_KEY);
+      window.localStorage.removeItem(AUTH_USER_CACHE_KEY);
       return;
     }
 
-    window.sessionStorage.setItem(
+    window.localStorage.setItem(
       AUTH_USER_CACHE_KEY,
       JSON.stringify({
         timestamp: Date.now(),
@@ -53,7 +53,7 @@ const writeCachedAuthUser = (user) => {
 
 const clearCachedAuthUser = () => {
   try {
-    window.sessionStorage.removeItem(AUTH_USER_CACHE_KEY);
+    window.localStorage.removeItem(AUTH_USER_CACHE_KEY);
   } catch {
     // Ignore storage failures.
   }

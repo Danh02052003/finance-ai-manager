@@ -64,7 +64,13 @@ const DebtsPage = () => {
   };
 
   const openNewForm = () => {
-    setForm(defaultForm);
+    const today = new Date().toISOString().slice(0, 10);
+    setForm({
+      ...defaultForm,
+      from_jar_key: 'long_term_saving',
+      debt_date: today,
+      month: today.substring(0, 7)
+    });
     setEditingId('');
     setIsFormOpen(true);
   };
@@ -234,15 +240,7 @@ const DebtsPage = () => {
             
             <div className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 transition focus-within:border-indigo-500/50 focus-within:bg-white/[0.04]">
-                    <span className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Người cho mượn (Từ hũ)</span>
-                    <select name="from_jar_key" value={form.from_jar_key} onChange={handleChange} required className="w-full bg-transparent text-sm font-medium text-white outline-none">
-                      <option value="" className="text-slate-800">Chọn hũ nguồn</option>
-                      {jars.map((jar) => <option key={jar._id} value={jar.jar_key} className="text-slate-800">{jar.display_name_vi}</option>)}
-                    </select>
-                  </label>
-
+                <div className="grid gap-4 sm:grid-cols-1">
                   <label className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 transition focus-within:border-indigo-500/50 focus-within:bg-white/[0.04]">
                     <span className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Người mượn (Sang hũ)</span>
                     <select name="to_jar_key" value={form.to_jar_key} onChange={handleChange} required className="w-full bg-transparent text-sm font-medium text-white outline-none">

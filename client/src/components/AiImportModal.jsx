@@ -61,7 +61,7 @@ const AiImportModal = ({ isOpen, onClose, jars, onSaveBulk }) => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d20] shadow-2xl shadow-black/50 flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d20] shadow-2xl shadow-black/50 flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4 shrink-0">
           <h2 className="flex items-center gap-2 text-base font-semibold text-white">
             <SparklesIcon className="h-5 w-5 text-indigo-400" />
@@ -131,13 +131,13 @@ const AiImportModal = ({ isOpen, onClose, jars, onSaveBulk }) => {
                           <input type="date" value={draft.date} onChange={(e) => updateDraft(idx, 'date', e.target.value)} className="w-[120px] bg-transparent text-xs outline-none" />
                         </td>
                         <td className="px-2 py-2">
-                          <input type="text" value={draft.description} onChange={(e) => updateDraft(idx, 'description', e.target.value)} className="w-[150px] bg-transparent outline-none" />
+                          <input type="text" value={draft.description} onChange={(e) => updateDraft(idx, 'description', e.target.value)} className="w-[200px] min-w-full bg-transparent outline-none" />
                         </td>
                         <td className="px-2 py-2">
                           <CurrencyInput value={draft.amount} onChange={(e) => updateDraft(idx, 'amount', e.target.value)} className="w-[80px] bg-transparent font-medium text-white outline-none" />
                         </td>
                         <td className="px-2 py-2">
-                          <select value={draft.jar_key} onChange={(e) => updateDraft(idx, 'jar_key', e.target.value)} className="w-[110px] bg-transparent text-xs outline-none">
+                          <select value={draft.jar_key} onChange={(e) => updateDraft(idx, 'jar_key', e.target.value)} className="w-[140px] bg-transparent text-xs outline-none">
                             {jars.map(j => <option key={j.jar_key} value={j.jar_key}>{j.display_name_vi}</option>)}
                           </select>
                         </td>
@@ -148,7 +148,7 @@ const AiImportModal = ({ isOpen, onClose, jars, onSaveBulk }) => {
                           </select>
                         </td>
                         <td className="px-2 py-2">
-                          <select value={draft.category} onChange={(e) => updateDraft(idx, 'category', e.target.value)} className="w-[110px] bg-transparent text-xs outline-none">
+                          <select value={draft.category} onChange={(e) => updateDraft(idx, 'category', e.target.value)} className="w-[130px] bg-transparent text-xs outline-none">
                             <option value="uncategorized">Để AI phân loại</option>
                             <option value="food_drink">Ăn uống</option>
                             <option value="bills">Hóa đơn</option>
