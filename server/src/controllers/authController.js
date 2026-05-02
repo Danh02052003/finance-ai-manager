@@ -6,6 +6,7 @@ import {
   registerUser,
   serializeUser
 } from '../services/authService.js';
+import { reclassifyImportedTransactions } from '../services/importExcelService.js';
 
 const getSessionMeta = (req) => ({
   ipAddress: req.ip,
@@ -41,6 +42,7 @@ export const postRegister = async (req, res, next) => {
       message: result.message,
       data: result.data
     });
+    reclassifyImportedTransactions(result.data.user._id).catch((e) => console.error('Auto-classify error:', e));
   } catch (error) {
     next(error);
   }
@@ -54,6 +56,7 @@ export const postLogin = async (req, res, next) => {
       message: result.message,
       data: result.data
     });
+    reclassifyImportedTransactions(result.data.user._id).catch((e) => console.error('Auto-classify error:', e));
   } catch (error) {
     next(error);
   }
@@ -79,6 +82,7 @@ export const getMe = async (req, res, next) => {
         user: serializeUser(req.user)
       }
     });
+    reclassifyImportedTransactions(req.user._id).catch((e) => console.error('Auto-classify error:', e));
   } catch (error) {
     next(error);
   }

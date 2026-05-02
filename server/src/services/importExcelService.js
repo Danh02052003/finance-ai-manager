@@ -115,7 +115,8 @@ export const resetImportedData = async (userId) => {
 export const reclassifyImportedTransactions = async (userId) => {
   const transactions = await Transaction.find({
     user_id: userId,
-    direction: 'expense'
+    direction: 'expense',
+    category: { $in: ['uncategorized', '', null] }
   })
     .sort({ transaction_date: -1, created_at: -1 })
     .lean();
