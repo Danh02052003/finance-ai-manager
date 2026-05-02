@@ -64,6 +64,10 @@ const transactionSchema = new Schema(
     notes: {
       type: String,
       trim: true
+    },
+    is_ai_classified: {
+      type: Boolean,
+      default: false
     }
   },
   {

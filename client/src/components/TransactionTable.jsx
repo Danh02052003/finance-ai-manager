@@ -1,7 +1,8 @@
 import {
   CheckCircleIcon,
   PencilSquareIcon,
-  TrashIcon
+  TrashIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 import { formatCurrency, formatDate } from './formatters.js';
@@ -147,7 +148,8 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
       <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
         {jarNameByKey[item.jar_key] || item.jar_key || 'Không rõ hũ'}
       </span>
-      <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
+      <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
+        {item.is_ai_classified ? <SparklesIcon className="h-3 w-3 text-indigo-400" title="Phân loại bởi AI" /> : null}
         {categoryLabels[item.category] || categoryLabels.uncategorized}
       </span>
       {getSourceBadge(item) ? (

@@ -77,16 +77,23 @@ const buildTransactionPayload = async (userId, payload) => {
   const description = requireString(payload.description, 'description');
   const notes = parseOptionalString(payload.notes) || null;
   const normalizedCategory = normalizeCategory(payload.category);
-  const category =
-    normalizedCategory === 'uncategorized'
-      ? await classifyTransactionCategoryWithAi({
-          description,
-          jar_key: jar?.jar_key || null,
-          amount: payload.amount,
-          month: payload.month,
-          notes
-        })
-      : normalizedCategory;
+  let category = normalizedCategory;
+  let isAiClassified = payload.is_ai_classified === true;
+
+  if (normalizedCategory === 'uncategorized') {
+    const aiCategory = await classifyTransactionCategoryWithAi({
+      description,
+      jar_key: jar?.jar_key || null,
+      amount: payload.amount,
+      month: payload.month,
+      notes
+    });
+    
+    if (aiCategory !== 'uncategorized') {
+      category = aiCategory;
+      isAiClassified = true;
+    }
+  }
 
   return {
     user_id: userId,
@@ -101,7 +108,8 @@ const buildTransactionPayload = async (userId, payload) => {
     description,
     source: parseOptionalString(payload.source) || 'manual',
     external_row_ref: parseOptionalString(payload.external_row_ref) || null,
-    notes
+    notes,
+    is_ai_classified: isAiClassified
   };
 };
 

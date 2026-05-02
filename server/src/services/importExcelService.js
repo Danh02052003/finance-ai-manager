@@ -142,7 +142,8 @@ export const reclassifyImportedTransactions = async (userId) => {
         { _id: transaction._id, user_id: userId },
         {
           $set: {
-            category: transaction.category || 'uncategorized'
+            category: transaction.category || 'uncategorized',
+            is_ai_classified: transaction.category && transaction.category !== 'uncategorized'
           }
         }
       )

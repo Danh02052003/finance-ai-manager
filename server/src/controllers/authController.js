@@ -82,7 +82,6 @@ export const getMe = async (req, res, next) => {
         user: serializeUser(req.user)
       }
     });
-    reclassifyImportedTransactions(req.user._id).catch((e) => console.error('Auto-classify error:', e));
   } catch (error) {
     next(error);
   }

@@ -149,7 +149,8 @@ const TransactionsPage = () => {
         amountStr,
         amountK,
         amountFormatted,
-        transaction.direction === 'expense' ? 'chi tieu' : 'thu nhap'
+        transaction.direction === 'expense' ? 'chi tieu' : 'thu nhap',
+        transaction.is_ai_classified ? 'ai phan loai' : 'thu cong'
       ].filter(Boolean).join(' '));
 
       const matchesAmount = exactAmountQuery != null && Number(transaction.amount) === exactAmountQuery;
@@ -259,7 +260,8 @@ const TransactionsPage = () => {
       direction: form.direction || 'expense',
       category: form.category || '',
       description: form.description,
-      notes: form.notes
+      notes: form.notes,
+      is_ai_classified: false
     };
 
     try {
@@ -291,7 +293,8 @@ const TransactionsPage = () => {
             direction: draft.direction || 'expense',
             category: draft.category === 'uncategorized' ? '' : draft.category || '',
             description: draft.description,
-            notes: ''
+            notes: '',
+            is_ai_classified: true
           })
         )
       );
