@@ -232,11 +232,13 @@ const TransactionsPage = () => {
   const openCreateModal = (direction = 'expense') => {
     resetForm(selectedMonthFilter || currentMonth(), selectedJarFilter || 'essentials', direction);
     setIsEditorOpen(true);
+    setError('');
     clearQuickAddQuery();
   };
 
   const closeEditor = () => {
     setIsEditorOpen(false);
+    setError('');
     resetForm();
     clearQuickAddQuery();
   };
@@ -316,6 +318,7 @@ const TransactionsPage = () => {
       description: transaction.description || '',
       notes: transaction.notes || ''
     });
+    setError('');
     setIsEditorOpen(true);
   };
 
@@ -530,6 +533,12 @@ const TransactionsPage = () => {
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
+
+            {error ? (
+              <div className="border-b border-rose-500/20 bg-rose-500/10 px-5 py-3 text-sm text-rose-200">
+                {error}
+              </div>
+            ) : null}
 
             <form onSubmit={handleSubmit} className="space-y-4 p-5">
               <div className="flex gap-2">

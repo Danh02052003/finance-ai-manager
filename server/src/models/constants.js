@@ -18,6 +18,11 @@ export const TRANSACTION_CATEGORIES = [
   'learning',
   'family',
   'charity',
+  'personal_care',
+  'shopping',
+  'transport',
+  'health',
+  'entertainment',
   'uncategorized'
 ];
 
