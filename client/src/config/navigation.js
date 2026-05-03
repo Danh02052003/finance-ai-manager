@@ -59,7 +59,7 @@ export const navigationItems = [
     icon: CircleStackIcon,
     group: 'manage',
     showInBottomNav: false
-
+  }
 ];
 
 export const getPageMeta = (pathname) =>
