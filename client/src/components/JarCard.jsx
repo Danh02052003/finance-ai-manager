@@ -1,4 +1,5 @@
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from 'react-i18next';
 
 import { jarVisuals } from '../config/jarVisuals.js';
 import { formatCurrency } from './formatters.js';
@@ -26,6 +27,7 @@ const JarCard = ({
   primaryActionLabel = 'Xem lịch sử',
   onPrimaryAction
 }) => {
+  const { t, i18n } = useTranslation();
   const visual = jarVisuals[jar.jar_key] || jarVisuals.essentials;
   const Icon = visual.icon;
   const resolvedPercentage = clampPercentage(
@@ -44,8 +46,8 @@ const JarCard = ({
           <Icon className="h-5 w-5" />
         </span>
         <div>
-          <h3 className="text-base font-semibold text-white">{jar.display_name_vi}</h3>
-          <p className="mt-0.5 text-xs text-white/50">{visual.subtitle}</p>
+          <h3 className="text-base font-semibold text-white">{i18n.language === 'en' ? jar.jar_key.replace(/_/g, ' ').toUpperCase() : jar.display_name_vi}</h3>
+          <p className="mt-0.5 text-xs text-white/50">{t(`jars.visual.${jar.jar_key}.subtitle`, visual.subtitle)}</p>
         </div>
       </div>
 
@@ -60,14 +62,14 @@ const JarCard = ({
         >
           <div className="rounded-lg bg-white/[0.06] px-3 py-2">
             <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">
-              Chi {monthLabel || 'tháng này'}
+              {t('jars.spent')} {monthLabel || t('jars.thisMonth', 'tháng này')}
             </p>
             <p className="mt-0.5 text-sm font-semibold tabular-nums text-rose-300">
               {formatCurrency(spentAmount)}
             </p>
           </div>
           <div className="rounded-lg bg-white/[0.06] px-3 py-2">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">Còn lại</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">{t('jars.remaining', 'Còn lại')}</p>
             <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
               {formatCurrency(remainingAmount ?? amount)}
             </p>
@@ -75,7 +77,7 @@ const JarCard = ({
           {reserveAmount != null || reserveLabel ? (
             <div className="rounded-lg bg-sky-500/10 px-3 py-2">
               <p className="text-[10px] font-medium uppercase tracking-wider text-sky-300/60">
-                {reserveLabel || 'Giữ riêng'}
+                {reserveLabel || t('jars.reserved', 'Giữ riêng')}
               </p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-sky-200">
                 {formatCurrency(reserveAmount || 0)}
@@ -86,7 +88,7 @@ const JarCard = ({
 
         <div className="mt-4">
           <div className="mb-1.5 flex items-center justify-between text-xs text-white/50">
-            <span>Tỷ lệ mục tiêu</span>
+            <span>{t('jars.targetPercentage', 'Tỷ lệ mục tiêu')}</span>
             <span className="font-semibold tabular-nums" style={{ color: visual.accent }}>
               {resolvedPercentage}%
             </span>
@@ -121,7 +123,7 @@ const JarCard = ({
           onClick={() => onPrimaryAction?.(jar)}
           className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.12] bg-white/[0.06] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-white/[0.1]"
         >
-          {primaryActionLabel}
+          {primaryActionLabel === 'Xem lịch sử' ? t('jars.viewHistory', 'Xem lịch sử') : primaryActionLabel}
           <ArrowRightIcon className="h-3.5 w-3.5" />
         </button>
       </div>

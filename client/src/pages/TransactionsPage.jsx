@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import {
   createTransaction,
@@ -89,6 +90,7 @@ const parseAmountSearchValue = (value) => {
 const isIncomeDirection = (value) => value === 'income_adjustment';
 
 const TransactionsPage = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [transactions, setTransactions] = useState([]);
   const [jars, setJars] = useState([]);
@@ -378,7 +380,7 @@ const TransactionsPage = () => {
 
       <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-base font-semibold text-white">Bộ lọc và tìm kiếm</h2>
+          <h2 className="text-base font-semibold text-white">{t('transactions.filterTitle', 'Bộ lọc và tìm kiếm')}</h2>
           <div className="flex flex-wrap gap-2">
             {hasActiveFilters ? (
               <button
@@ -395,7 +397,7 @@ const TransactionsPage = () => {
               className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-400"
             >
               <SparklesIcon className="h-3.5 w-3.5" />
-              Nhập qua AI
+              {t('transactions.importAi')}
             </button>
             <button
               type="button"
@@ -403,7 +405,7 @@ const TransactionsPage = () => {
               className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-400"
             >
               <PlusIcon className="h-3.5 w-3.5" />
-              Chi từ hũ
+              {t('transactions.addExpense')}
             </button>
             <button
               type="button"
@@ -411,7 +413,7 @@ const TransactionsPage = () => {
               className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-400"
             >
               <PlusIcon className="h-3.5 w-3.5" />
-              Thu vào hũ
+              {t('transactions.addIncome')}
             </button>
           </div>
         </div>
@@ -420,13 +422,13 @@ const TransactionsPage = () => {
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
             <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500">
               <MagnifyingGlassIcon className="h-3.5 w-3.5" />
-              Tìm kiếm
+              {t('transactions.searchTitle', 'Tìm kiếm')}
             </span>
             <input
               aria-label="Tìm kiếm giao dịch"
               name="searchTerm"
               type="text"
-              placeholder="74k, cafe, trả tiền..."
+              placeholder={t('transactions.searchPlaceholder')}
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
@@ -436,7 +438,7 @@ const TransactionsPage = () => {
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
             <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-500">
               <FunnelIcon className="h-3.5 w-3.5" />
-              Tháng
+              {t('transactions.filterMonth')}
             </span>
             <select
               value={selectedMonthFilter}
@@ -453,13 +455,13 @@ const TransactionsPage = () => {
           </label>
 
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Hũ</span>
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.filterJar')}</span>
             <select
               value={selectedJarFilter}
               onChange={(event) => setSelectedJarFilter(event.target.value)}
               className="w-full bg-transparent text-sm text-white outline-none"
             >
-              <option value="">Tất cả hũ</option>
+              <option value="">{t('common.all')}</option>
               {availableJars.map((jar) => (
                 <option key={jar._id} value={jar.jar_key}>
                   {jar.display_name_vi}
@@ -469,26 +471,26 @@ const TransactionsPage = () => {
           </label>
 
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Loại</span>
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.filterType')}</span>
             <select
               value={selectedDirectionFilter}
               onChange={(event) => setSelectedDirectionFilter(event.target.value)}
               className="w-full bg-transparent text-sm text-white outline-none"
             >
-              <option value="">Tất cả</option>
+              <option value="">{t('common.all')}</option>
               <option value="expense">Chi tiêu</option>
               <option value="income_adjustment">Thu nhập</option>
             </select>
           </label>
 
           <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Danh mục</span>
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.filterCategory')}</span>
             <select
               value={selectedCategoryFilter}
               onChange={(event) => setSelectedCategoryFilter(event.target.value)}
               className="w-full bg-transparent text-sm text-white outline-none"
             >
-              <option value="">Tất cả</option>
+              <option value="">{t('common.all')}</option>
               {categoryOptions.map((option) => (
                 <option key={option.label} value={option.value || 'uncategorized'}>
                   {option.label}
@@ -501,7 +503,7 @@ const TransactionsPage = () => {
 
       <TransactionTable
         items={filteredTransactions}
-        title={selectedJarName ? `${selectedJarName} / ${selectedMonthFilter || 'tất cả'}` : 'Giao dịch gần đây'}
+        title={selectedJarName ? `${selectedJarName} / ${selectedMonthFilter || t('common.all').toLowerCase()}` : t('transactions.recent')}
         jarNameByKey={jarNameByKey}
         selectedIds={selectedIds}
         onToggleSelection={handleToggleSelection}
@@ -521,8 +523,8 @@ const TransactionsPage = () => {
                     ? 'Chỉnh sửa khoản thu'
                     : 'Chỉnh sửa giao dịch'
                   : isIncomeDirection(form.direction)
-                    ? 'Thu vào hũ'
-                    : 'Ghi chi tiêu'}
+                    ? t('transactions.addIncome')
+                    : t('transactions.addExpense')}
               </h2>
               <button
                 type="button"
@@ -552,7 +554,7 @@ const TransactionsPage = () => {
                       : 'border border-white/[0.08] text-slate-400 hover:text-white'
                   ].join(' ')}
                 >
-                  Chi từ hũ
+                  {t('transactions.addExpense')}
                 </button>
                 <button
                   type="button"
@@ -564,7 +566,7 @@ const TransactionsPage = () => {
                       : 'border border-white/[0.08] text-slate-400 hover:text-white'
                   ].join(' ')}
                 >
-                  Thu vào hũ
+                  {t('transactions.addIncome')}
                 </button>
               </div>
 

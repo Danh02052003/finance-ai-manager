@@ -4,23 +4,11 @@ import {
   TrashIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline';
+import { useTranslation } from 'react-i18next';
 
 import { formatCurrency, formatDate } from './formatters.js';
 
-const categoryLabels = {
-  food_drink: 'Ăn uống',
-  bills: 'Hóa đơn',
-  investment: 'Đầu tư',
-  learning: 'Học tập',
-  family: 'Gia đình',
-  charity: 'Từ thiện',
-  personal_care: 'Chăm sóc cá nhân',
-  shopping: 'Mua sắm',
-  transport: 'Di chuyển',
-  health: 'Sức khỏe',
-  entertainment: 'Giải trí',
-  uncategorized: 'Chưa phân loại'
-};
+
 
 const getDayKey = (value) => {
   if (!value) {
@@ -47,9 +35,9 @@ const formatTime = (value) => {
   });
 };
 
-const formatDayTitle = (dayKey) => {
+const formatDayTitle = (dayKey, t) => {
   if (!dayKey) {
-    return 'Không rõ ngày';
+    return t('transactions.unknownDate', 'Không rõ ngày');
   }
 
   const today = new Date();
@@ -59,11 +47,11 @@ const formatDayTitle = (dayKey) => {
   const yesterdayKey = yesterday.toISOString().slice(0, 10);
 
   if (dayKey === todayKey) {
-    return 'Hôm nay';
+    return t('transactions.today', 'Hôm nay');
   }
 
   if (dayKey === yesterdayKey) {
-    return 'Hôm qua';
+    return t('transactions.yesterday', 'Hôm qua');
   }
 
   return formatDate(dayKey);
@@ -76,7 +64,7 @@ const getAmountPrefix = (item) => (item.direction === 'income_adjustment' ? '+' 
 
 
 
-const groupTransactionsByDay = (items) => {
+const groupTransactionsByDay = (items, t) => {
   const groups = items.reduce((accumulator, item) => {
     const dayKey = getDayKey(item.transaction_date) || 'unknown';
 
@@ -101,7 +89,7 @@ const groupTransactionsByDay = (items) => {
 
       return {
         dayKey,
-        title: formatDayTitle(dayKey),
+        title: formatDayTitle(dayKey, t),
         items: dayItems.sort((firstItem, secondItem) =>
           String(secondItem.transaction_date || '').localeCompare(String(firstItem.transaction_date || ''))
         ),
@@ -112,7 +100,7 @@ const groupTransactionsByDay = (items) => {
     .sort((firstItem, secondItem) => secondItem.dayKey.localeCompare(firstItem.dayKey));
 };
 
-const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelection, onEdit, onDelete }) => (
+const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelection, onEdit, onDelete, t }) => (
   <div className="group grid gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] p-3 transition hover:bg-white/[0.04] md:grid-cols-[auto_80px_minmax(0,1fr)_auto_130px_auto] md:items-center md:gap-4 relative">
     <label className="inline-flex items-center gap-2 text-sm text-slate-400">
       <input
@@ -129,7 +117,7 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
 
     <div className="min-w-0">
       <div className="flex items-start justify-between gap-3 md:block">
-        <p className="truncate text-sm font-medium text-white">{item.description || 'Không có mô tả'}</p>
+        <p className="truncate text-sm font-medium text-white">{item.description || t('transactions.noDescription', 'Không có mô tả')}</p>
         <p className={`shrink-0 text-sm font-semibold tabular-nums md:hidden ${getAmountToneClass(item)}`}>
           {getAmountPrefix(item)}
           {typeof item.amount === 'number' ? formatCurrency(item.amount) : '-'}
@@ -140,11 +128,11 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
 
     <div className="flex flex-wrap gap-1.5">
       <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
-        {jarNameByKey[item.jar_key] || item.jar_key || 'Không rõ hũ'}
+        {jarNameByKey[item.jar_key] || item.jar_key || t('transactions.unknownJar', 'Không rõ hũ')}
       </span>
       <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
-        {item.is_ai_classified ? <SparklesIcon className="h-3 w-3 text-indigo-400" title="Phân loại bởi AI" /> : null}
-        {categoryLabels[item.category] || categoryLabels.uncategorized}
+        {item.is_ai_classified ? <SparklesIcon className="h-3 w-3 text-indigo-400" title={t('transactions.aiClassified', 'Phân loại bởi AI')} /> : null}
+        {t(`category.${item.category || 'uncategorized'}`)}
       </span>
     </div>
 
@@ -187,9 +175,10 @@ const TransactionTable = ({
   onEdit,
   onDelete
 }) => {
+  const { t } = useTranslation();
   const areAllVisibleSelected =
     items.length > 0 && items.every((item) => selectedIds.includes(item._id));
-  const dayGroups = groupTransactionsByDay(items);
+  const dayGroups = groupTransactionsByDay(items, t);
 
   return (
     <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4 sm:p-5">
@@ -206,7 +195,7 @@ const TransactionTable = ({
             onClick={onToggleSelectAll}
             disabled={!items.length}
           >
-            {areAllVisibleSelected ? 'Bỏ chọn' : 'Chọn tất cả'}
+            {areAllVisibleSelected ? t('transactions.deselect', 'Bỏ chọn') : t('transactions.selectAll', 'Chọn tất cả')}
           </button>
           {selectedIds.length > 0 ? (
             <button
@@ -214,7 +203,7 @@ const TransactionTable = ({
               className="rounded-lg bg-rose-500/15 px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
               onClick={onDeleteSelected}
             >
-              Xóa {selectedIds.length} mục
+              {t('transactions.deleteCount', { count: selectedIds.length }, `Xóa ${selectedIds.length} mục`)}
             </button>
           ) : null}
         </div>
@@ -239,10 +228,10 @@ const TransactionTable = ({
                 <summary className="flex cursor-pointer list-none flex-col gap-2 px-4 py-3 transition hover:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-white">{group.title}</p>
-                    <span className="text-xs text-slate-500">{group.items.length} giao dịch</span>
+                    <span className="text-xs text-slate-500">{t('transactions.itemCount', { count: group.items.length }, `${group.items.length} giao dịch`)}</span>
                     {isHighlighted ? (
                       <span className="rounded-md bg-indigo-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-300">
-                        Đang xem
+                        {t('transactions.viewing', 'Đang xem')}
                       </span>
                     ) : null}
                   </div>
@@ -270,6 +259,7 @@ const TransactionTable = ({
                       onToggleSelection={onToggleSelection}
                       onEdit={onEdit}
                       onDelete={onDelete}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -279,7 +269,7 @@ const TransactionTable = ({
         ) : (
           <div className="rounded-xl border border-dashed border-white/[0.08] px-4 py-10 text-center">
             <CheckCircleIcon className="mx-auto h-7 w-7 text-slate-600" />
-            <p className="mt-2 text-sm text-slate-400">Không có giao dịch.</p>
+            <p className="mt-2 text-sm text-slate-400">{t('transactions.noTransactions', 'Không có giao dịch.')}</p>
           </div>
         )}
       </div>

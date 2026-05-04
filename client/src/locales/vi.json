@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "transactions": "Giao dịch",
+    "jars": "6 Hũ",
+    "plan": "Kế hoạch",
+    "debts": "Nợ nội bộ",
+    "actualBalances": "Số dư thực"
+  },
+  "nav_group": {
+    "core": "Chính",
+    "manage": "Quản lý",
+    "tools": "Tiện ích"
+  },
+  "sidebar": {
+    "logout": "Đăng xuất",
+    "loggingOut": "Đang đăng xuất...",
+    "account": "Tài khoản",
+    "subtitle": "Quản lý 6 hũ thông minh"
+  },
+  "transactions": {
+    "title": "Sổ giao dịch",
+    "importAi": "Nhập qua AI",
+    "addExpense": "Chi từ hũ",
+    "addIncome": "Thu vào hũ",
+    "searchPlaceholder": "Tìm kiếm...",
+    "filterMonth": "Tháng",
+    "filterJar": "Tất cả hũ",
+    "filterType": "Loại",
+    "filterCategory": "Danh mục",
+    "recent": "Giao dịch gần đây",
+    "selectAll": "Chọn tất cả",
+    "editExpense": "Sửa giao dịch chi",
+    "editIncome": "Sửa giao dịch thu"
+  },
+  "common": {
+    "all": "Tất cả",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "amount": "Số tiền",
+    "date": "Ngày",
+    "description": "Mô tả",
+    "jar": "Hũ",
+    "category": "Danh mục",
+    "notes": "Ghi chú"
+  },
+  "jars": {
+    "monthPeriod": "Kỳ tháng",
+    "selectMonth": "Chọn tháng",
+    "empty": "Trống",
+    "income": "Thu nhập",
+    "allocation": "Phân bổ",
+    "spent": "Đã chi",
+    "reserved": "Giữ riêng",
+    "from": "Từ",
+    "defaultConfigWarning": "Đang hiển thị cấu hình 6 hũ mặc định.",
+    "unselected": "Chưa chọn",
+    "fromMonth": "Từ",
+    "suggestedDaily": "Gợi ý ~{{budget}}/ngày trong {{days}} ngày còn lại.",
+    "monthEnded": "Tháng đã kết thúc. Tổng chi: {{spent}}.",
+    "overspendWarning": "Vượt nhịp chi an toàn {{amount}} (~{{days}} ngày).",
+    "deltaAdjusted": "Phân bổ {{allocated}} + điều chỉnh {{adjusted}}",
+    "deltaMonth": "Phân bổ tháng {{month}}",
+    "deltaNone": "Chưa có phân bổ tháng này"
+  }
+}

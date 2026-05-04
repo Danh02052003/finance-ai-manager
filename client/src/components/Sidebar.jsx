@@ -1,6 +1,7 @@
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { navigationItems } from '../config/navigation.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -14,6 +15,7 @@ const navGroups = [
 const Sidebar = ({ isOpen, onClose }) => {
   const { logout, user } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -51,7 +53,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
           <div>
             <h1 className="text-[15px] font-bold tracking-tight text-white">Finance AI</h1>
-            <p className="text-[11px] text-slate-500">Quản lý 6 hũ thông minh</p>
+            <p className="text-[11px] text-slate-500">{t('sidebar.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -68,7 +70,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             return (
               <section key={group.key}>
                 <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-widest text-slate-600">
-                  {group.label}
+                  {t(`nav_group.${group.key}`)}
                 </p>
                 <div className="space-y-0.5">
                   {items.map((item) => {
@@ -99,7 +101,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                             >
                               <Icon className="h-[18px] w-[18px]" />
                             </span>
-                            <span className="truncate text-[13px] font-medium">{item.label}</span>
+                            <span className="truncate text-[13px] font-medium">{t(item.labelKey)}</span>
                           </>
                         )}
                       </NavLink>
@@ -114,7 +116,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <div className="mt-auto space-y-3 border-t border-white/[0.06] pt-4">
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-3">
-          <p className="truncate text-xs font-semibold text-white">{user?.display_name || 'Tài khoản'}</p>
+          <p className="truncate text-xs font-semibold text-white">{user?.display_name || t('sidebar.account')}</p>
           <p className="mt-1 truncate text-[11px] text-slate-500">{user?.email || ''}</p>
         </div>
 
@@ -125,7 +127,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
         >
           <ArrowRightOnRectangleIcon className="h-4 w-4" />
-          {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+          {isLoggingOut ? t('sidebar.loggingOut') : t('sidebar.logout')}
         </button>
 
         <p className="px-3 text-[11px] text-slate-600">v1.0 · Mô hình 6 hũ</p>

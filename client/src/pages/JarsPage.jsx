@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import {
   getJarActualBalances,
@@ -56,6 +57,7 @@ const getMonthMetrics = (selectedMonth) => {
 };
 
 const JarsPage = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [jars, setJars] = useState(defaultJars);
   const [monthlyIncomes, setMonthlyIncomes] = useState([]);
@@ -99,7 +101,7 @@ const JarsPage = () => {
         );
         setError('');
       } catch (requestError) {
-        setError('Đang hiển thị cấu hình 6 hũ mặc định.');
+        setError(t('jars.defaultConfigWarning', 'Đang hiển thị cấu hình 6 hũ mặc định.'));
       }
     };
 
@@ -136,7 +138,7 @@ const JarsPage = () => {
   const selectedMonthSpentTotal = selectedMonthTransactions.reduce((sum, item) => sum + (item.direction === 'expense' ? item.amount || 0 : 0), 0);
 
   const selectedMonthIncome = monthlyIncomes.find((item) => item.month === selectedMonth)?.total_amount || 0;
-  const selectedMonthLabel = selectedMonth || 'Chưa chọn';
+  const selectedMonthLabel = selectedMonth || t('jars.unselected', 'Chưa chọn');
   const monthMetrics = getMonthMetrics(selectedMonth);
   const previousSnapshotMonth = getPreviousActualBalanceMonth(actualBalances, selectedMonth);
   const previousActualBalanceMap = getActualBalanceMapByMonth(actualBalances, previousSnapshotMonth);
@@ -154,9 +156,9 @@ const JarsPage = () => {
 
       <section id="jars-summary" data-assistant-target="jars-summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <label className="rounded-2xl border border-indigo-500/15 bg-indigo-500/[0.06] p-4 cursor-pointer hover:bg-indigo-500/[0.1] transition-colors relative">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-indigo-400/70">Kỳ tháng</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-indigo-400/70">{t('jars.monthPeriod', 'Kỳ tháng')}</p>
           <select
-            aria-label="Chọn tháng"
+            aria-label={t('jars.selectMonth', 'Chọn tháng')}
             value={selectedMonth}
             onChange={(event) => setSelectedMonth(event.target.value)}
             className="mt-2 w-full bg-transparent text-2xl font-bold tabular-nums text-white outline-none cursor-pointer appearance-none"
@@ -164,7 +166,7 @@ const JarsPage = () => {
             {availableMonths.length > 0 ? (
               availableMonths.map((month) => <option key={month} value={month} className="text-slate-900 text-base">{month}</option>)
             ) : (
-              <option value="" className="text-slate-900 text-base">Trống</option>
+              <option value="" className="text-slate-900 text-base">{t('jars.empty', 'Trống')}</option>
             )}
           </select>
           <div className="pointer-events-none absolute right-4 bottom-5 text-indigo-400">
@@ -172,23 +174,23 @@ const JarsPage = () => {
           </div>
         </label>
         <article className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Thu nhập</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('jars.income', 'Thu nhập')}</p>
           <p className="mt-2 text-2xl font-bold tabular-nums text-white">{formatCurrency(selectedMonthIncome)}</p>
         </article>
         <article className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Phân bổ</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('jars.allocation', 'Phân bổ')}</p>
           <p className="mt-2 text-2xl font-bold tabular-nums text-white">{formatCurrency(selectedMonthAllocationTotal)}</p>
         </article>
         <article className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Đã chi</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('jars.spent', 'Đã chi')}</p>
           <p className="mt-2 text-2xl font-bold tabular-nums text-white">{formatCurrency(selectedMonthSpentTotal)}</p>
         </article>
 
         <article className="rounded-2xl border border-sky-500/15 bg-sky-500/[0.06] p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-sky-400/70">Giữ riêng</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-sky-400/70">{t('jars.reserved', 'Giữ riêng')}</p>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <p className="text-2xl font-bold tabular-nums text-white">{previousSnapshotMonth ? formatCurrency(previousActualBalanceTotal) : '--'}</p>
-            <p className="text-[11px] whitespace-nowrap text-sky-400/50">{previousSnapshotMonth ? `Từ ${previousSnapshotMonth}` : ''}</p>
+            <p className="text-[11px] whitespace-nowrap text-sky-400/50">{previousSnapshotMonth ? `${t('jars.from', 'Từ')} ${previousSnapshotMonth}` : ''}</p>
           </div>
         </article>
       </section>
@@ -231,29 +233,30 @@ const JarsPage = () => {
               spentAmount={spentAmount}
               remainingAmount={remainingAmount}
               reserveAmount={typeof previousActualBalance === 'number' ? previousActualBalance : null}
-              reserveLabel={previousSnapshotMonth ? `Giữ riêng ${previousSnapshotMonth}` : ''}
+              reserveLabel={previousSnapshotMonth ? `${t('jars.reserved', 'Giữ riêng')} ${previousSnapshotMonth}` : ''}
               monthLabel={selectedMonthLabel}
               dailyBudgetLabel={
                 monthMetrics
                   ? monthMetrics.daysRemaining > 0
-                    ? `Gợi ý ~${formatCurrency(suggestedDailyBudget)}/ngày trong ${monthMetrics.daysRemaining} ngày còn lại.`
-                    : `Tháng đã kết thúc. Tổng chi: ${formatCurrency(spentAmount)}.`
+                    ? t('jars.suggestedDaily', { budget: formatCurrency(suggestedDailyBudget), days: monthMetrics.daysRemaining })
+                    : t('jars.monthEnded', { spent: formatCurrency(spentAmount) })
                   : ''
               }
               warningLabel={
                 overspendAmount > 0
-                  ? `Vượt nhịp chi an toàn ${formatCurrency(overspendAmount)} (~${overspendDays} ngày).`
+                  ? t('jars.overspendWarning', { amount: formatCurrency(overspendAmount), days: overspendDays })
                   : ''
               }
               percentage={currentMonthPercentage}
               deltaLabel={
                 allocationByJar.get(jar.jar_key)
                   ? positiveAdjustments > 0
-                    ? `Phân bổ ${formatCurrency(monthlyAllocation)} + điều chỉnh ${formatCurrency(positiveAdjustments)}`
-                    : `Phân bổ tháng ${selectedMonthLabel}`
-                  : 'Chưa có phân bổ tháng này'
+                    ? t('jars.deltaAdjusted', { allocated: formatCurrency(monthlyAllocation), adjusted: formatCurrency(positiveAdjustments) })
+                    : t('jars.deltaMonth', { month: selectedMonthLabel })
+                  : t('jars.deltaNone', 'Chưa có phân bổ tháng này')
               }
               onPrimaryAction={handleViewJarHistory}
+              i18n={i18n}
             />
           );
         })}

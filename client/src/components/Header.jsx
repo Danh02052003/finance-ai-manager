@@ -1,6 +1,7 @@
 import { ArrowRightOnRectangleIcon, Bars3Icon, PlusIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { getPageMeta } from '../config/navigation.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -10,6 +11,12 @@ const Header = ({ onOpenSidebar }) => {
   const pageMeta = getPageMeta(location.pathname);
   const { logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'vi' ? 'en' : 'vi';
+    i18n.changeLanguage(newLang);
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -37,7 +44,7 @@ const Header = ({ onOpenSidebar }) => {
 
             <div className="min-w-0">
               <h2 className="truncate text-[15px] font-semibold text-white">
-                {pageMeta.title}
+                {t(pageMeta.titleKey)}
               </h2>
               <p className="hidden truncate text-xs text-slate-500 sm:block">
                 {pageMeta.description}
@@ -46,6 +53,12 @@ const Header = ({ onOpenSidebar }) => {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLanguage}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-white/[0.08] px-3 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
+            >
+              {i18n.language === 'vi' ? 'EN' : 'VI'}
+            </button>
           </div>
         </div>
       </div>

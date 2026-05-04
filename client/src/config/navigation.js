@@ -12,9 +12,8 @@ export const navigationItems = [
 
   {
     to: '/transactions',
-    label: 'Giao dịch',
-    shortLabel: 'Giao dịch',
-    title: 'Sổ giao dịch',
+    labelKey: 'nav.transactions',
+    titleKey: 'nav.transactions',
     description: 'Ghi chi tiêu, tìm lại lịch sử và theo dõi dòng tiền từng ngày.',
     icon: CreditCardIcon,
     group: 'core',
@@ -22,9 +21,8 @@ export const navigationItems = [
   },
   {
     to: '/jars',
-    label: '6 Hũ',
-    shortLabel: '6 Hũ',
-    title: 'Chi tiết 6 hũ',
+    labelKey: 'nav.jars',
+    titleKey: 'nav.jars',
     description: 'Phân bổ, đã chi, còn lại và mức chi gợi ý cho từng hũ.',
     icon: BanknotesIcon,
     group: 'core',
@@ -32,9 +30,8 @@ export const navigationItems = [
   },
   {
     to: '/monthly-plan',
-    label: 'Kế hoạch',
-    shortLabel: 'Kế hoạch',
-    title: 'Kế hoạch tháng',
+    labelKey: 'nav.plan',
+    titleKey: 'nav.plan',
     description: 'Nhập thu nhập và để hệ thống tự phân bổ 6 hũ.',
     icon: CalendarDaysIcon,
     group: 'manage',
@@ -42,9 +39,8 @@ export const navigationItems = [
   },
   {
     to: '/debts',
-    label: 'Nợ nội bộ',
-    shortLabel: 'Nợ',
-    title: 'Nợ giữa các hũ',
+    labelKey: 'nav.debts',
+    titleKey: 'nav.debts',
     description: 'Theo dõi các khoản tạm ứng và hoàn trả giữa các hũ.',
     icon: ExclamationTriangleIcon,
     group: 'manage',
@@ -52,9 +48,8 @@ export const navigationItems = [
   },
   {
     to: '/actual-balances',
-    label: 'Số dư thực',
-    shortLabel: 'Số dư',
-    title: 'Số dư thực tế',
+    labelKey: 'nav.actualBalances',
+    titleKey: 'nav.actualBalances',
     description: 'Lưu số tiền thực đang giữ, tách riêng khỏi ngân sách vận hành.',
     icon: CircleStackIcon,
     group: 'manage',
@@ -64,8 +59,7 @@ export const navigationItems = [
 
 export const getPageMeta = (pathname) =>
   navigationItems.find((item) => pathname.startsWith(item.to)) || {
-    label: 'Quản lý tài chính',
-    shortLabel: 'App',
-    title: 'Finance AI Manager',
+    labelKey: 'nav.app',
+    titleKey: 'nav.app',
     description: 'Ứng dụng quản lý tài chính cá nhân theo mô hình 6 hũ.'
   };

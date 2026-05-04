@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "transactions": "Transactions",
+    "jars": "6 Jars",
+    "plan": "Monthly Plan",
+    "debts": "Internal Debts",
+    "actualBalances": "Actual Balances"
+  },
+  "nav_group": {
+    "core": "Core",
+    "manage": "Management",
+    "tools": "Tools"
+  },
+  "sidebar": {
+    "logout": "Logout",
+    "loggingOut": "Logging out...",
+    "account": "Account",
+    "subtitle": "Smart 6 Jars Management"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "importAi": "Import via AI",
+    "addExpense": "Add Expense",
+    "addIncome": "Add Income",
+    "searchPlaceholder": "Search...",
+    "filterMonth": "Month",
+    "filterJar": "All Jars",
+    "filterType": "All Types",
+    "filterCategory": "All Categories",
+    "recent": "Recent Transactions",
+    "selectAll": "Select All",
+    "editExpense": "Edit Expense",
+    "editIncome": "Edit Income"
+  },
+  "common": {
+    "all": "All",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "amount": "Amount",
+    "date": "Date",
+    "description": "Description",
+    "jar": "Jar",
+    "category": "Category",
+    "notes": "Notes"
+  },
+  "jars": {
+    "monthPeriod": "Month Period",
+    "selectMonth": "Select month",
+    "empty": "Empty",
+    "income": "Income",
+    "allocation": "Allocation",
+    "spent": "Spent",
+    "reserved": "Reserved",
+    "from": "From",
+    "defaultConfigWarning": "Showing default 6 Jars config.",
+    "unselected": "Unselected",
+    "fromMonth": "From",
+    "suggestedDaily": "Suggested ~{{budget}}/day for the remaining {{days}} days.",
+    "monthEnded": "Month ended. Total spent: {{spent}}.",
+    "overspendWarning": "Over safe spending pace by {{amount}} (~{{days}} days).",
+    "deltaAdjusted": "Allocated {{allocated}} + adjusted {{adjusted}}",
+    "deltaMonth": "Allocated for {{month}}",
+    "deltaNone": "No allocation this month"
+  }
+}
