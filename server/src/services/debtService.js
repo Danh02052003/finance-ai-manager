@@ -49,6 +49,23 @@ export const createDebt = async (userId, payload) => {
   const debtPayload = await buildDebtPayload(userId, payload);
   const debt = await JarDebt.create(debtPayload);
 
+  if (debtPayload.status === 'open') {
+    const { createTransaction } = await import('./transactionService.js');
+    const today = new Date().toISOString().slice(0, 10);
+    const reasonText = debtPayload.reason ? ` (${debtPayload.reason})` : '';
+
+    await createTransaction(userId, {
+      jar_key: debtPayload.from_jar_key,
+      month: debtPayload.month,
+      transaction_date: debtPayload.debt_date ? new Date(debtPayload.debt_date).toISOString().slice(0, 10) : today,
+      amount: debtPayload.amount,
+      direction: 'expense',
+      category: 'uncategorized',
+      description: debtPayload.reason || 'Ghi nợ nội bộ',
+      source: 'auto_debt_creation'
+    });
+  }
+
   return {
     message: 'Debt created successfully.',
     data: debt.toObject()
