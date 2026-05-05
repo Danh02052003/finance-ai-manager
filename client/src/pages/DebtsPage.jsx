@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 import {
   createDebt,
@@ -9,6 +9,7 @@ import {
 } from '../api/dashboardApi.js';
 import CurrencyInput from '../components/CurrencyInput.jsx';
 import DebtTable from '../components/DebtTable.jsx';
+import { formatCurrency } from '../components/formatters.js';
 
 const defaultForm = {
   from_jar_key: '',
@@ -156,6 +157,31 @@ const DebtsPage = () => {
     }
   }, [message, error]);
 
+  const debtStats = useMemo(() => {
+    const stats = {};
+    
+    jars.forEach(jar => {
+      stats[jar.jar_key] = {
+        name: jar.display_name_vi,
+        lent: 0,
+        borrowed: 0
+      };
+    });
+
+    debts.filter(d => d.status === 'open').forEach(debt => {
+      if (stats[debt.from_jar_key]) {
+        stats[debt.from_jar_key].lent += (debt.amount || 0);
+      }
+      if (stats[debt.to_jar_key]) {
+        stats[debt.to_jar_key].borrowed += (debt.amount || 0);
+      }
+    });
+
+    return Object.values(stats)
+      .filter(s => s.lent > 0 || s.borrowed > 0)
+      .sort((a, b) => (b.lent + b.borrowed) - (a.lent + a.borrowed));
+  }, [debts, jars]);
+
   return (
     <div className="space-y-6 pb-24">
       {/* Header Section */}
@@ -190,6 +216,31 @@ const DebtsPage = () => {
           ) : null}
         </div>
       </section>
+
+      {/* Debt Summary Section */}
+      {debtStats.length > 0 && (
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {debtStats.map(stat => (
+            <div key={stat.name} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 flex flex-col justify-center">
+              <h3 className="text-sm font-semibold text-white mb-3">{stat.name}</h3>
+              <div className="flex flex-col gap-2">
+                {stat.lent > 0 && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Cho mượn:</span>
+                    <span className="font-semibold text-emerald-400 tabular-nums">+{formatCurrency(stat.lent)}</span>
+                  </div>
+                )}
+                {stat.borrowed > 0 && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Đang nợ:</span>
+                    <span className="font-semibold text-rose-400 tabular-nums">-{formatCurrency(stat.borrowed)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       {/* Filter Area */}
       <div className="flex items-center gap-2 mb-4">
