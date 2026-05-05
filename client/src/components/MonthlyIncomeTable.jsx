@@ -1,8 +1,8 @@
 import { formatCurrency, formatDate } from './formatters.js';
 
-const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
+const MonthlyIncomeTable = ({ items, onEdit, onDelete, t }) => (
   <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
-    <h3 className="text-base font-semibold text-white">Lịch sử thu nhập</h3>
+    <h3 className="text-base font-semibold text-white">{t?.('monthlyPlan.historyTitle', 'Lịch sử thu nhập') || 'Lịch sử thu nhập'}</h3>
 
     <div className="mt-4 space-y-2.5 md:hidden">
       {items.length > 0 ? (
@@ -17,7 +17,7 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
                 {typeof item.total_amount === 'number' ? formatCurrency(item.total_amount) : '-'}
               </p>
             </div>
-            <p className="mt-2 text-xs text-slate-500">Nhận ngày {formatDate(item.income_date)}</p>
+            <p className="mt-2 text-xs text-slate-500">{t?.('monthlyPlan.receivedDateLabel', { date: formatDate(item.income_date) }) || `Nhận ngày ${formatDate(item.income_date)}`}</p>
             {item.source_note ? <p className="mt-1 text-xs text-slate-500">{item.source_note}</p> : null}
             <div className="mt-3 flex gap-2">
               <button
@@ -25,21 +25,21 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
                 onClick={() => onEdit?.(item)}
                 className="flex-1 rounded-lg border border-white/[0.08] py-2 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06]"
               >
-                Sửa
+                {t?.('common.edit', 'Sửa') || 'Sửa'}
               </button>
               <button
                 type="button"
                 onClick={() => onDelete?.(item)}
                 className="flex-1 rounded-lg bg-rose-500/10 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/15"
               >
-                Xóa
+                {t?.('common.delete', 'Xóa') || 'Xóa'}
               </button>
             </div>
           </article>
         ))
       ) : (
         <div className="rounded-xl border border-dashed border-white/[0.08] px-4 py-8 text-center text-sm text-slate-500">
-          Chưa có dữ liệu thu nhập.
+          {t?.('monthlyPlan.noIncomeData', 'Chưa có dữ liệu thu nhập.') || 'Chưa có dữ liệu thu nhập.'}
         </div>
       )}
     </div>
@@ -49,11 +49,11 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
         <table className="min-w-full text-sm">
           <thead className="bg-white/[0.04] text-left text-[11px] font-medium uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="px-4 py-3">Tháng</th>
-              <th className="px-4 py-3">Thu nhập</th>
-              <th className="px-4 py-3">Ngày nhận</th>
-              <th className="px-4 py-3">Ghi chú</th>
-              <th className="px-4 py-3 text-right">Thao tác</th>
+              <th className="px-4 py-3">{t?.('monthlyPlan.tableMonth', 'Tháng') || 'Tháng'}</th>
+              <th className="px-4 py-3">{t?.('monthlyPlan.tableIncome', 'Thu nhập') || 'Thu nhập'}</th>
+              <th className="px-4 py-3">{t?.('monthlyPlan.tableDate', 'Ngày nhận') || 'Ngày nhận'}</th>
+              <th className="px-4 py-3">{t?.('monthlyPlan.tableNotes', 'Ghi chú') || 'Ghi chú'}</th>
+              <th className="px-4 py-3 text-right">{t?.('monthlyPlan.tableActions', 'Thao tác') || 'Thao tác'}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
@@ -73,14 +73,14 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
                         onClick={() => onEdit?.(item)}
                         className="rounded-lg border border-white/[0.08] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06]"
                       >
-                        Sửa
+                        {t?.('common.edit', 'Sửa') || 'Sửa'}
                       </button>
                       <button
                         type="button"
                         onClick={() => onDelete?.(item)}
                         className="rounded-lg bg-rose-500/10 px-2.5 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/15"
                       >
-                        Xóa
+                        {t?.('common.delete', 'Xóa') || 'Xóa'}
                       </button>
                     </div>
                   </td>
@@ -89,7 +89,7 @@ const MonthlyIncomeTable = ({ items, onEdit, onDelete }) => (
             ) : (
               <tr>
                 <td colSpan="5" className="px-4 py-10 text-center text-sm text-slate-500">
-                  Chưa có dữ liệu.
+                  {t?.('monthlyPlan.tableNoData', 'Chưa có dữ liệu.') || 'Chưa có dữ liệu.'}
                 </td>
               </tr>
             )}

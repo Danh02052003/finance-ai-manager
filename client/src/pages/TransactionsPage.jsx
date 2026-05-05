@@ -90,7 +90,7 @@ const parseAmountSearchValue = (value) => {
 const isIncomeDirection = (value) => value === 'income_adjustment';
 
 const TransactionsPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [transactions, setTransactions] = useState([]);
   const [jars, setJars] = useState([]);
@@ -175,7 +175,7 @@ const TransactionsPage = () => {
       setSelectedIds((current) => current.filter((id) => loadedTransactions.some((item) => item._id === id)));
       setError('');
     } catch {
-      setError('Không tải được danh sách giao dịch.');
+      setError(t('transactions.loadError', 'Không tải được danh sách giao dịch.'));
     } finally {
       setIsLoading(false);
     }
@@ -252,7 +252,7 @@ const TransactionsPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.transaction_date) {
-      setError('Vui lòng chọn ngày giao dịch.');
+      setError(t('transactions.requireDate', 'Vui lòng chọn ngày giao dịch.'));
       return;
     }
 
@@ -271,17 +271,17 @@ const TransactionsPage = () => {
     try {
       if (editingId) {
         await updateTransaction(editingId, payload);
-        setMessage(isIncomeDirection(payload.direction) ? 'Đã cập nhật khoản thu.' : 'Đã cập nhật giao dịch.');
+        setMessage(isIncomeDirection(payload.direction) ? t('transactions.successUpdateIncome', 'Đã cập nhật khoản thu.') : t('transactions.successUpdateExpense', 'Đã cập nhật giao dịch.'));
       } else {
         await createTransaction(payload);
-        setMessage(isIncomeDirection(payload.direction) ? 'Đã ghi nhận thu vào hũ.' : 'Đã lưu chi tiêu.');
+        setMessage(isIncomeDirection(payload.direction) ? t('transactions.successAddIncome', 'Đã ghi nhận thu vào hũ.') : t('transactions.successAddExpense', 'Đã lưu chi tiêu.'));
       }
 
       closeEditor();
       setSelectedMonthFilter(payload.month);
       await loadTransactions();
     } catch (requestError) {
-      setError(requestError.message || 'Không lưu được giao dịch.');
+      setError(requestError.message || t('transactions.errorSave', 'Không lưu được giao dịch.'));
     }
   };
 
@@ -302,10 +302,10 @@ const TransactionsPage = () => {
           })
         )
       );
-      setMessage(`Đã nhập thành công ${drafts.length} giao dịch qua AI.`);
+      setMessage(t('transactions.successImportAi', { count: drafts.length }, `Đã nhập thành công ${drafts.length} giao dịch qua AI.`));
       await loadTransactions();
     } catch (err) {
-      throw new Error(err.message || 'Lỗi khi lưu hàng loạt.');
+      throw new Error(err.message || t('transactions.errorSaveBulk', 'Lỗi khi lưu hàng loạt.'));
     }
   };
 
@@ -325,14 +325,14 @@ const TransactionsPage = () => {
   };
 
   const handleDelete = async (transaction) => {
-    if (!window.confirm('Xóa giao dịch này?')) return;
+    if (!window.confirm(t('transactions.confirmDelete', 'Xóa giao dịch này?'))) return;
     try {
       await deleteTransaction(transaction._id);
       if (editingId === transaction._id) closeEditor();
-      setMessage('Đã xóa giao dịch.');
+      setMessage(t('transactions.successDelete', 'Đã xóa giao dịch.'));
       await loadTransactions();
     } catch (requestError) {
-      setError(requestError.message || 'Không xóa được giao dịch.');
+      setError(requestError.message || t('transactions.errorDelete', 'Không xóa được giao dịch.'));
     }
   };
 
@@ -351,15 +351,15 @@ const TransactionsPage = () => {
   };
 
   const handleDeleteSelected = async () => {
-    if (!selectedIds.length || !window.confirm(`Xóa ${selectedIds.length} giao dịch đã chọn?`)) return;
+    if (!selectedIds.length || !window.confirm(t('transactions.confirmDeleteBulk', { count: selectedIds.length }, `Xóa ${selectedIds.length} giao dịch đã chọn?`))) return;
     try {
       await Promise.all(selectedIds.map((transactionId) => deleteTransaction(transactionId)));
       if (editingId && selectedIds.includes(editingId)) closeEditor();
       setSelectedIds([]);
-      setMessage(`Đã xóa ${selectedIds.length} giao dịch.`);
+      setMessage(t('transactions.successDeleteBulk', { count: selectedIds.length }, `Đã xóa ${selectedIds.length} giao dịch.`));
       await loadTransactions();
     } catch (requestError) {
-      setError(requestError.message || 'Không xóa được các giao dịch đã chọn.');
+      setError(requestError.message || t('transactions.errorDeleteBulk', 'Không xóa được các giao dịch đã chọn.'));
     }
   };
 
@@ -388,7 +388,7 @@ const TransactionsPage = () => {
                 onClick={clearFilters}
                 className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08]"
               >
-                Xóa bộ lọc
+                {t('transactions.clearFilters', 'Xóa bộ lọc')}
               </button>
             ) : null}
             <button
@@ -425,7 +425,7 @@ const TransactionsPage = () => {
               {t('transactions.searchTitle', 'Tìm kiếm')}
             </span>
             <input
-              aria-label="Tìm kiếm giao dịch"
+              aria-label={t('transactions.ariaSearch', 'Tìm kiếm giao dịch')}
               name="searchTerm"
               type="text"
               placeholder={t('transactions.searchPlaceholder')}
@@ -445,7 +445,7 @@ const TransactionsPage = () => {
               onChange={(event) => setSelectedMonthFilter(event.target.value)}
               className="w-full bg-transparent text-sm text-white outline-none"
             >
-              <option value="">Tất cả</option>
+              <option value="">{t('transactions.allMonths', 'Tất cả tháng')}</option>
               {availableMonthFilters.map((month) => (
                 <option key={month} value={month}>
                   {month}
@@ -461,10 +461,10 @@ const TransactionsPage = () => {
               onChange={(event) => setSelectedJarFilter(event.target.value)}
               className="w-full bg-transparent text-sm text-white outline-none"
             >
-              <option value="">{t('common.all')}</option>
+              <option value="">{t('transactions.allJars', 'Tất cả hũ')}</option>
               {availableJars.map((jar) => (
                 <option key={jar._id} value={jar.jar_key}>
-                  {jar.display_name_vi}
+                  {i18n.language === 'en' ? jar.jar_key.replace(/_/g, ' ').toUpperCase() : jar.display_name_vi}
                 </option>
               ))}
             </select>
@@ -477,9 +477,9 @@ const TransactionsPage = () => {
               onChange={(event) => setSelectedDirectionFilter(event.target.value)}
               className="w-full bg-transparent text-sm text-white outline-none"
             >
-              <option value="">{t('common.all')}</option>
-              <option value="expense">Chi tiêu</option>
-              <option value="income_adjustment">Thu nhập</option>
+              <option value="">{t('transactions.allDirections', 'Tất cả loại')}</option>
+              <option value="expense">{t('transactions.expenseLabel', 'Chi tiêu (-)')}</option>
+              <option value="income_adjustment">{t('transactions.incomeLabel', 'Thu nhập (+)')}</option>
             </select>
           </label>
 
@@ -490,10 +490,10 @@ const TransactionsPage = () => {
               onChange={(event) => setSelectedCategoryFilter(event.target.value)}
               className="w-full bg-transparent text-sm text-white outline-none"
             >
-              <option value="">{t('common.all')}</option>
+              <option value="">{t('transactions.allCategories', 'Tất cả danh mục')}</option>
               {categoryOptions.map((option) => (
                 <option key={option.label} value={option.value || 'uncategorized'}>
-                  {option.label}
+                  {option.value ? t(`category.${option.value}`) : t('category.uncategorized', 'Để AI phân loại')}
                 </option>
               ))}
             </select>
@@ -520,8 +520,8 @@ const TransactionsPage = () => {
               <h2 className="text-base font-semibold text-white">
                 {editingId
                   ? isIncomeDirection(form.direction)
-                    ? 'Chỉnh sửa khoản thu'
-                    : 'Chỉnh sửa giao dịch'
+                    ? t('transactions.editIncome', 'Chỉnh sửa khoản thu')
+                    : t('transactions.editExpense', 'Chỉnh sửa giao dịch')
                   : isIncomeDirection(form.direction)
                     ? t('transactions.addIncome')
                     : t('transactions.addExpense')}
@@ -530,7 +530,7 @@ const TransactionsPage = () => {
                 type="button"
                 onClick={closeEditor}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.08] hover:text-white"
-                aria-label="Đóng"
+                aria-label={t('transactions.ariaClose', 'Đóng')}
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
@@ -572,9 +572,9 @@ const TransactionsPage = () => {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ngày</span>
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.dateLabel', 'Ngày')}</span>
                   <input
-                    aria-label="Ngày giao dịch"
+                    aria-label={t('transactions.ariaDate', 'Ngày giao dịch')}
                     name="transaction_date"
                     type="date"
                     value={form.transaction_date}
@@ -585,7 +585,7 @@ const TransactionsPage = () => {
                 </label>
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
                   <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                    Số tiền (nghìn đồng)
+                    {t('transactions.amountLabel', 'Số tiền (nghìn đồng)')}
                   </span>
                   <CurrencyInput
                     name="amount"
@@ -593,12 +593,12 @@ const TransactionsPage = () => {
                     onChange={handleChange}
                     required
                     autoFocus
-                    placeholder="VD: 50 -> 50.000đ"
+                    placeholder={t('transactions.amountPlaceholder', 'VD: 50 -> 50.000đ')}
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
                   />
                 </label>
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Hũ</span>
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.jarLabel', 'Hũ')}</span>
                   <select
                     name="jar_key"
                     value={form.jar_key}
@@ -608,13 +608,13 @@ const TransactionsPage = () => {
                   >
                     {availableJars.map((jar) => (
                       <option key={jar._id} value={jar.jar_key}>
-                        {jar.display_name_vi}
+                        {i18n.language === 'en' ? jar.jar_key.replace(/_/g, ' ').toUpperCase() : jar.display_name_vi}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Phân loại</span>
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.categoryLabel', 'Phân loại')}</span>
                   <select
                     name="category"
                     value={form.category}
@@ -623,7 +623,7 @@ const TransactionsPage = () => {
                   >
                     {categoryOptions.map((option) => (
                       <option key={option.label} value={option.value || ''}>
-                        {option.label}
+                        {option.value ? t(`category.${option.value}`) : t('category.uncategorized', 'Để AI phân loại')}
                       </option>
                     ))}
                   </select>
@@ -631,20 +631,20 @@ const TransactionsPage = () => {
               </div>
 
               <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Mô tả</span>
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.descLabel', 'Mô tả')}</span>
                 <input
-                  aria-label="Mô tả"
+                  aria-label={t('transactions.ariaDesc', 'Mô tả')}
                   name="description"
                   value={form.description}
                   onChange={handleChange}
                   required
-                  placeholder={isIncomeDirection(form.direction) ? 'VD: Bạn trả lại 65k' : 'VD: Cafe sáng'}
+                  placeholder={isIncomeDirection(form.direction) ? t('transactions.incomeExample', 'VD: Bạn trả lại 65k') : t('transactions.expenseExample', 'VD: Cafe sáng')}
                   className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
                 />
               </label>
 
               <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ghi chú</span>
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.notesLabel', 'Ghi chú')}</span>
                 <textarea
                   name="notes"
                   value={form.notes}
@@ -660,7 +660,7 @@ const TransactionsPage = () => {
                   onClick={closeEditor}
                   className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.06]"
                 >
-                  Hủy
+                  {t('transactions.cancelBtn', 'Hủy')}
                 </button>
                 <button
                   type="submit"
@@ -669,7 +669,7 @@ const TransactionsPage = () => {
                   }`}
                 >
                   <PencilSquareIcon className="h-4 w-4" />
-                  {editingId ? 'Cập nhật' : 'Lưu'}
+                  {editingId ? t('transactions.updateBtn', 'Cập nhật') : t('transactions.saveBtn', 'Lưu')}
                 </button>
               </div>
             </form>
@@ -691,7 +691,7 @@ const TransactionsPage = () => {
           className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-400"
         >
           <PlusIcon className="h-4 w-4" />
-          Thu vào hũ
+          {t('transactions.addIncomeMobile', 'Thu vào hũ')}
         </button>
         <button
           type="button"
@@ -699,11 +699,11 @@ const TransactionsPage = () => {
           className="inline-flex items-center gap-2 rounded-full bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/30 transition hover:bg-rose-400"
         >
           <PlusIcon className="h-4 w-4" />
-          Chi từ hũ
+          {t('transactions.addExpenseMobile', 'Chi từ hũ')}
         </button>
       </div>
 
-      {isLoading ? <div className="rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-slate-500">Đang tải...</div> : null}
+      {isLoading ? <div className="rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-slate-500">{t('transactions.loading', 'Đang tải...')}</div> : null}
     </div>
   );
 };

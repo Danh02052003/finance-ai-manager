@@ -47,7 +47,7 @@ const Header = ({ onOpenSidebar }) => {
                 {t(pageMeta.titleKey)}
               </h2>
               <p className="hidden truncate text-xs text-slate-500 sm:block">
-                {pageMeta.description}
+                {t(pageMeta.descKey, pageMeta.description)}
               </p>
             </div>
           </div>

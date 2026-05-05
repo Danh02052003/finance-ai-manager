@@ -1,6 +1,7 @@
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   createJarAllocation,
@@ -48,6 +49,7 @@ const defaultIncomeForm = {
 };
 
 const MonthlyPlanPage = () => {
+  const { t, i18n } = useTranslation();
   const incomeFormRef = useRef(null);
   const [monthlyIncomes, setMonthlyIncomes] = useState([]);
   const [jarAllocations, setJarAllocations] = useState([]);
@@ -70,7 +72,7 @@ const MonthlyPlanPage = () => {
       setJars(Array.isArray(jarResponse.data) ? jarResponse.data : []);
       setError('');
     } catch {
-      setError('Không tải được dữ liệu kế hoạch tháng.');
+      setError(t('monthlyPlan.loadError', 'Không tải được dữ liệu kế hoạch tháng.'));
     }
   };
 
@@ -112,7 +114,7 @@ const MonthlyPlanPage = () => {
 
         return {
           jarKey,
-          jarName: jar?.display_name_vi || jarKey,
+          jarName: i18n.language === 'en' ? jarKey.replace(/_/g, ' ').toUpperCase() : (jar?.display_name_vi || jarKey),
           percentage,
           allocatedAmount: currentAllocation?.allocated_amount ?? fallbackAmount
         };
@@ -142,7 +144,7 @@ const MonthlyPlanPage = () => {
       jar_key: jarKey,
       allocated_amount: Math.round((Number(totalAmount) * percentage) / 100),
       allocation_percentage: percentage,
-      note: 'Tự chia theo tỷ lệ 6 hũ.'
+      note: t('monthlyPlan.autoAllocatedNote', 'Tự chia theo tỷ lệ 6 hũ.')
     }));
 
     await Promise.all(
@@ -191,7 +193,7 @@ const MonthlyPlanPage = () => {
           savedIncome?.total_amount || incomeAmountPreview || 0,
           savedIncome?.month || normalizedIncomePayload.month
         );
-        setMessage('Đã cập nhật thu nhập tháng.');
+        setMessage(t('monthlyPlan.updateSuccess', 'Đã cập nhật thu nhập tháng.'));
       } else {
         const response = await createMonthlyIncome(normalizedIncomePayload);
         const createdIncome = response?.data;
@@ -204,13 +206,13 @@ const MonthlyPlanPage = () => {
           );
         }
 
-        setMessage('Đã tạo thu nhập và tự chia theo 6 hũ.');
+        setMessage(t('monthlyPlan.createSuccess', 'Đã tạo thu nhập và tự chia theo 6 hũ.'));
       }
 
       resetIncomeForm();
       await loadMonthlyPlanData();
     } catch (requestError) {
-      setError(requestError.message || 'Không lưu được thu nhập tháng.');
+      setError(requestError.message || t('monthlyPlan.saveError', 'Không lưu được thu nhập tháng.'));
     }
   };
 
@@ -226,7 +228,7 @@ const MonthlyPlanPage = () => {
   };
 
   const handleDeleteIncome = async (monthlyIncome) => {
-    if (!window.confirm('Xóa thu nhập này? Phân bổ liên quan cũng sẽ bị xóa.')) {
+    if (!window.confirm(t('common.deleteConfirm', 'Xóa thu nhập này? Phân bổ liên quan cũng sẽ bị xóa.'))) {
       return;
     }
 
@@ -235,10 +237,10 @@ const MonthlyPlanPage = () => {
       if (editingIncomeId === monthlyIncome._id) {
         resetIncomeForm();
       }
-      setMessage('Đã xóa thu nhập tháng.');
+      setMessage(t('monthlyPlan.deleteSuccess', 'Đã xóa thu nhập tháng.'));
       await loadMonthlyPlanData();
     } catch (requestError) {
-      setError(requestError.message || 'Không xóa được thu nhập.');
+      setError(requestError.message || t('monthlyPlan.deleteError', 'Không xóa được thu nhập.'));
     }
   };
 
@@ -254,23 +256,23 @@ const MonthlyPlanPage = () => {
         <div className="flex flex-col gap-5">
           <div className="max-w-2xl">
             <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Kế hoạch tháng
+              {t('monthlyPlan.title', 'Kế hoạch tháng')}
             </h1>
             {message ? <p className="mt-3 text-sm text-emerald-300/80">{message}</p> : null}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-white/[0.08] bg-white/[0.06] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Tháng</p>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('transactions.filterMonth', 'Tháng')}</p>
               <p className="mt-1.5 text-2xl font-bold tabular-nums text-white">{focusedIncome?.month || activeMonth}</p>
             </div>
             <div className="rounded-xl border border-white/[0.08] bg-white/[0.06] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Thu nhập</p>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('monthlyPlan.title', 'Thu nhập')}</p>
               <p className="mt-1.5 text-2xl font-bold tabular-nums text-white">{formatCurrency(focusedIncomeTotal)}</p>
             </div>
             <div className="rounded-xl border border-white/[0.08] bg-white/[0.06] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Chế độ</p>
-              <p className="mt-1.5 text-sm font-semibold text-white">Tự chia {activeJarCount} hũ</p>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('jars.allocation', 'Chế độ')}</p>
+              <p className="mt-1.5 text-sm font-semibold text-white">{t('monthlyPlan.autoAllocateDesc', { count: activeJarCount, ratio: ratioSummary })}</p>
               <p className="mt-1 text-xs text-slate-500">{ratioSummary}</p>
             </div>
           </div>
@@ -291,25 +293,25 @@ const MonthlyPlanPage = () => {
           className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5"
         >
           <h2 className="text-base font-semibold text-white">
-            {editingIncomeId ? 'Chỉnh sửa thu nhập' : 'Nhập thu nhập mới'}
+            {editingIncomeId ? t('monthlyPlan.editIncomeTitle', 'Chỉnh sửa thu nhập') : t('monthlyPlan.addIncomeTitle', 'Nhập thu nhập mới')}
           </h2>
 
           <form onSubmit={handleIncomeSubmit} className="mt-4 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Tổng thu nhập</span>
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('monthlyPlan.totalAmountLabel', 'Tổng thu nhập')}</span>
                 <CurrencyInput
                   name="total_amount"
                   value={incomeForm.total_amount}
                   onChange={handleIncomeChange}
                   required
-                  placeholder={moneyInputHint}
+                  placeholder={t('monthlyPlan.amountHint', moneyInputHint)}
                   className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
                 />
               </label>
 
               <label className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ngày nhận</span>
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('monthlyPlan.dateLabel', 'Ngày nhận')}</span>
                 <input
                   type="date"
                   name="income_date"
@@ -324,12 +326,12 @@ const MonthlyPlanPage = () => {
             </div>
 
             <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-              <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ghi chú nguồn</span>
+              <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('monthlyPlan.sourceLabel', 'Ghi chú nguồn')}</span>
               <input
                 name="source_note"
                 value={incomeForm.source_note}
                 onChange={handleIncomeChange}
-                placeholder="VD: Lương tháng 4, thưởng..."
+                placeholder={t('monthlyPlan.sourceHint', 'VD: Lương tháng 4, thưởng...')}
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
               />
             </label>
@@ -340,13 +342,13 @@ const MonthlyPlanPage = () => {
                 onClick={resetIncomeForm}
                 className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/[0.06]"
               >
-                Làm mới
+                {t('common.cancel', 'Làm mới')}
               </button>
               <button
                 type="submit"
                 className="flex-1 rounded-xl bg-(--hero-gradient) py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/20 transition hover:shadow-indigo-900/30"
               >
-                {editingIncomeId ? 'Cập nhật' : 'Tạo thu nhập'}
+                {editingIncomeId ? t('monthlyPlan.updateBtn', 'Cập nhật') : t('monthlyPlan.createBtn', 'Tạo thu nhập')}
               </button>
             </div>
           </form>
@@ -356,15 +358,15 @@ const MonthlyPlanPage = () => {
           <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-300">
             <SparklesIcon className="h-5 w-5" />
           </div>
-          <h2 className="mt-4 text-base font-semibold text-white">Tự động chia 6 hũ</h2>
+          <h2 className="mt-4 text-base font-semibold text-white">{t('monthlyPlan.autoAllocateTitle', 'Tự động chia 6 hũ')}</h2>
 
           <div className="mt-4 space-y-3">
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Tháng lưu</p>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('monthlyPlan.saveMonth', 'Tháng lưu')}</p>
               <p className="mt-1.5 text-sm font-semibold tabular-nums text-white">{activeMonth}</p>
             </div>
             <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-400/70">Giá trị</p>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-400/70">{t('monthlyPlan.value', 'Giá trị')}</p>
               <p className="mt-1.5 text-sm font-semibold tabular-nums text-white">
                 {incomeAmountPreview != null ? formatCurrency(incomeAmountPreview) : '--'}
               </p>
@@ -376,7 +378,7 @@ const MonthlyPlanPage = () => {
       <section className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-white">Chi tiết 6 hũ ({focusedIncome?.month || activeMonth})</h2>
+            <h2 className="text-base font-semibold text-white">{t('monthlyPlan.jarDetails', { month: focusedIncome?.month || activeMonth })}</h2>
           </div>
           <span className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300">
             {formatCurrency(focusedIncomeTotal)}
@@ -406,7 +408,7 @@ const MonthlyPlanPage = () => {
         </div>
       </section>
 
-      <MonthlyIncomeTable items={monthlyIncomes} onEdit={handleEditIncome} onDelete={handleDeleteIncome} />
+      <MonthlyIncomeTable items={monthlyIncomes} onEdit={handleEditIncome} onDelete={handleDeleteIncome} t={t} />
     </div>
   );
 };

@@ -37,7 +37,7 @@ const formatTime = (value) => {
 
 const formatDayTitle = (dayKey, t) => {
   if (!dayKey) {
-    return t('transactions.unknownDate', 'Không rõ ngày');
+    return t('transactions.unknownDate', { defaultValue: 'Không rõ ngày' });
   }
 
   const today = new Date();
@@ -47,11 +47,11 @@ const formatDayTitle = (dayKey, t) => {
   const yesterdayKey = yesterday.toISOString().slice(0, 10);
 
   if (dayKey === todayKey) {
-    return t('transactions.today', 'Hôm nay');
+    return t('transactions.today', { defaultValue: 'Hôm nay' });
   }
 
   if (dayKey === yesterdayKey) {
-    return t('transactions.yesterday', 'Hôm qua');
+    return t('transactions.yesterday', { defaultValue: 'Hôm qua' });
   }
 
   return formatDate(dayKey);
@@ -117,7 +117,7 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
 
     <div className="min-w-0">
       <div className="flex items-start justify-between gap-3 md:block">
-        <p className="truncate text-sm font-medium text-white">{item.description || t('transactions.noDescription', 'Không có mô tả')}</p>
+        <p className="truncate text-sm font-medium text-white">{item.description || t('transactions.noDescription', { defaultValue: 'Không có mô tả' })}</p>
         <p className={`shrink-0 text-sm font-semibold tabular-nums md:hidden ${getAmountToneClass(item)}`}>
           {getAmountPrefix(item)}
           {typeof item.amount === 'number' ? formatCurrency(item.amount) : '-'}
@@ -128,10 +128,10 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
 
     <div className="flex flex-wrap gap-1.5">
       <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
-        {jarNameByKey[item.jar_key] || item.jar_key || t('transactions.unknownJar', 'Không rõ hũ')}
+        {jarNameByKey[item.jar_key] || item.jar_key || t('transactions.unknownJar', { defaultValue: 'Không rõ hũ' })}
       </span>
       <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
-        {item.is_ai_classified ? <SparklesIcon className="h-3 w-3 text-indigo-400" title={t('transactions.aiClassified', 'Phân loại bởi AI')} /> : null}
+        {item.is_ai_classified ? <SparklesIcon className="h-3 w-3 text-indigo-400" title={t('transactions.aiClassified', { defaultValue: 'Phân loại bởi AI' })} /> : null}
         {t(`category.${item.category || 'uncategorized'}`)}
       </span>
     </div>
@@ -195,7 +195,7 @@ const TransactionTable = ({
             onClick={onToggleSelectAll}
             disabled={!items.length}
           >
-            {areAllVisibleSelected ? t('transactions.deselect', 'Bỏ chọn') : t('transactions.selectAll', 'Chọn tất cả')}
+            {areAllVisibleSelected ? t('transactions.deselect', { defaultValue: 'Bỏ chọn' }) : t('transactions.selectAll', { defaultValue: 'Chọn tất cả' })}
           </button>
           {selectedIds.length > 0 ? (
             <button
@@ -203,7 +203,7 @@ const TransactionTable = ({
               className="rounded-lg bg-rose-500/15 px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
               onClick={onDeleteSelected}
             >
-              {t('transactions.deleteCount', { count: selectedIds.length }, `Xóa ${selectedIds.length} mục`)}
+              {t('transactions.deleteCount', { count: selectedIds.length, defaultValue: `Xóa ${selectedIds.length} mục` })}
             </button>
           ) : null}
         </div>
@@ -228,10 +228,10 @@ const TransactionTable = ({
                 <summary className="flex cursor-pointer list-none flex-col gap-2 px-4 py-3 transition hover:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-white">{group.title}</p>
-                    <span className="text-xs text-slate-500">{t('transactions.itemCount', { count: group.items.length }, `${group.items.length} giao dịch`)}</span>
+                    <span className="text-xs text-slate-500">{t('transactions.itemCount', { count: group.items.length, defaultValue: `${group.items.length} giao dịch` })}</span>
                     {isHighlighted ? (
                       <span className="rounded-md bg-indigo-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-300">
-                        {t('transactions.viewing', 'Đang xem')}
+                        {t('transactions.viewing', { defaultValue: 'Đang xem' })}
                       </span>
                     ) : null}
                   </div>
@@ -269,7 +269,7 @@ const TransactionTable = ({
         ) : (
           <div className="rounded-xl border border-dashed border-white/[0.08] px-4 py-10 text-center">
             <CheckCircleIcon className="mx-auto h-7 w-7 text-slate-600" />
-            <p className="mt-2 text-sm text-slate-400">{t('transactions.noTransactions', 'Không có giao dịch.')}</p>
+            <p className="mt-2 text-sm text-slate-400">{t('transactions.noTransactions', { defaultValue: 'Không có giao dịch.' })}</p>
           </div>
         )}
       </div>

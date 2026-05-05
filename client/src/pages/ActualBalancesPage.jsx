@@ -1,6 +1,7 @@
 import { ArrowPathIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   createJarActualBalance,
@@ -38,6 +39,7 @@ const buildFormState = (jars, actualBalanceMap) =>
   );
 
 const ActualBalancesPage = () => {
+  const { t, i18n } = useTranslation();
   const [jars, setJars] = useState([]);
   const [actualBalances, setActualBalances] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthValue());
@@ -58,7 +60,7 @@ const ActualBalancesPage = () => {
       setActualBalances(Array.isArray(actualBalanceResponse.data) ? actualBalanceResponse.data : []);
       setError('');
     } catch (requestError) {
-      setError(requestError.message || 'Không thể tải dữ liệu.');
+      setError(requestError.message || t('actualBalances.loadError', 'Không thể tải dữ liệu.'));
     }
   };
 
@@ -124,7 +126,7 @@ const ActualBalancesPage = () => {
     const row = formState[jarKey];
 
     if (!row?.actual_balance_amount?.trim()) {
-      setError('Nhập số dư thực trước khi lưu.');
+      setError(t('actualBalances.errorEmpty', 'Nhập số dư thực trước khi lưu.'));
       return;
     }
 
@@ -140,10 +142,10 @@ const ActualBalancesPage = () => {
         await createJarActualBalance(payload);
       }
 
-      setMessage(`Đã lưu số dư hũ ${jarKey}.`);
+      setMessage(t('actualBalances.savedJar', { jarKey: i18n.language === 'en' ? jarKey.replace(/_/g, ' ').toUpperCase() : jarKey }));
       await loadActualBalanceData();
     } catch (requestError) {
-      setError(requestError.message || 'Không lưu được dữ liệu.');
+      setError(requestError.message || t('actualBalances.saveError', 'Không lưu được dữ liệu.'));
     } finally {
       setSavingJarKey('');
     }
@@ -153,7 +155,7 @@ const ActualBalancesPage = () => {
     const rows = jars.filter((jar) => formState[jar.jar_key]?.actual_balance_amount?.trim());
 
     if (!rows.length) {
-      setError('Chưa có hũ nào có dữ liệu để lưu.');
+      setError(t('actualBalances.errorNoDataToSave', 'Chưa có hũ nào có dữ liệu để lưu.'));
       return;
     }
 
@@ -174,10 +176,10 @@ const ActualBalancesPage = () => {
         })
       );
 
-      setMessage(`Đã lưu toàn bộ số dư tháng ${selectedMonth}.`);
+      setMessage(t('actualBalances.savedAll', { month: selectedMonth }));
       await loadActualBalanceData();
     } catch (requestError) {
-      setError(requestError.message || 'Không lưu được dữ liệu.');
+      setError(requestError.message || t('actualBalances.saveError', 'Không lưu được dữ liệu.'));
     } finally {
       setIsSavingAll(false);
     }
@@ -208,7 +210,7 @@ const ActualBalancesPage = () => {
       )
     );
 
-    setMessage(`Đã sao chép dữ liệu từ tháng ${previousMonth}. Nhớ lưu lại để tạo snapshot mới.`);
+    setMessage(t('actualBalances.copySuccess', { month: previousMonth }));
     setError('');
   };
 
@@ -223,27 +225,27 @@ const ActualBalancesPage = () => {
       >
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Số dư thực tế</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{t('actualBalances.title', 'Số dư thực tế')}</h1>
             <p className="mt-2 max-w-lg text-sm text-slate-400">
-              Ghi nhận số tiền thực đang giữ theo từng hũ.
+              {t('actualBalances.desc', 'Ghi nhận số tiền thực đang giữ theo từng hũ.')}
             </p>
             {message ? <p className="mt-3 text-sm text-emerald-300/80">{message}</p> : null}
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.06] p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Tháng</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('actualBalances.month', 'Tháng')}</p>
                 <p className="mt-1 text-xl font-bold tabular-nums text-white">{selectedMonth}</p>
               </div>
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.06] p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Tổng số dư</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('actualBalances.totalBalance', 'Tổng số dư')}</p>
                 <p className="mt-1 text-xl font-bold tabular-nums text-white">{formatCurrency(selectedMonthTotal)}</p>
               </div>
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.06] p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Số dư tháng trước</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('actualBalances.prevBalance', 'Số dư tháng trước')}</p>
                 <p className="mt-1 text-xl font-bold tabular-nums text-white">
                   {previousMonth ? formatCurrency(previousMonthTotal) : '--'}
                 </p>
-                <p className="mt-0.5 text-[11px] text-slate-500">{previousMonth ? `Từ ${previousMonth}` : 'Chưa có'}</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">{previousMonth ? t('actualBalances.fromMonth', { month: previousMonth }) : t('actualBalances.notAvailable', 'Chưa có')}</p>
               </div>
             </div>
           </div>
@@ -254,13 +256,13 @@ const ActualBalancesPage = () => {
             className="rounded-2xl border border-white/[0.08] bg-black/20 p-5 backdrop-blur"
           >
             <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.04] p-3 text-xs leading-relaxed text-slate-400">
-              <p>{moneyInputHint}</p>
-              <p className="mt-2">Ví dụ: `83,869` = 83.869đ, `83869` = 83.869.000đ</p>
+              <p>{t('monthlyPlan.amountHint', moneyInputHint)}</p>
+              <p className="mt-2">{t('actualBalances.example', 'Ví dụ: `83,869` = 83.869đ, `83869` = 83.869.000đ')}</p>
             </div>
 
             <div className="mt-4 space-y-3">
               <label className="block rounded-xl border border-white/[0.06] bg-white/[0.04] px-3 py-2.5">
-                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Tháng</span>
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('actualBalances.month', 'Tháng')}</span>
                 <input
                   type="month"
                   value={selectedMonth}
@@ -276,7 +278,7 @@ const ActualBalancesPage = () => {
                   className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08]"
                 >
                   <DocumentDuplicateIcon className="h-3.5 w-3.5" />
-                  Sao chép tháng trước
+                  {t('actualBalances.copyPrevMonth', 'Sao chép tháng trước')}
                 </button>
                 <button
                   type="button"
@@ -285,7 +287,7 @@ const ActualBalancesPage = () => {
                   className="inline-flex items-center gap-1.5 rounded-lg bg-(--hero-gradient) px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-900/20 transition hover:shadow-indigo-900/30 disabled:opacity-50"
                 >
                   <ArrowPathIcon className={`h-3.5 w-3.5 ${isSavingAll ? 'animate-spin' : ''}`} />
-                  {isSavingAll ? 'Đang lưu...' : 'Lưu tất cả'}
+                  {isSavingAll ? t('actualBalances.saving', 'Đang lưu...') : t('actualBalances.saveAll', 'Lưu tất cả')}
                 </button>
               </div>
             </div>
@@ -314,28 +316,28 @@ const ActualBalancesPage = () => {
             <article key={jar.jar_key} className="rounded-2xl border border-white/[0.06] bg-(--surface-strong) p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-white">{jar.display_name_vi}</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">Snapshot tháng {selectedMonth}</p>
+                  <h2 className="text-base font-semibold text-white">{i18n.language === 'en' ? jar.jar_key.replace(/_/g, ' ').toUpperCase() : jar.display_name_vi}</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">{t('actualBalances.snapshot', { month: selectedMonth })}</p>
                 </div>
                 <span
                   className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${
                     row.id ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/[0.06] text-slate-500'
                   }`}
                 >
-                  {row.id ? 'Đã lưu' : 'Mới'}
+                  {row.id ? t('actualBalances.saved', 'Đã lưu') : t('actualBalances.new', 'Mới')}
                 </span>
               </div>
 
               <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Số dư tháng trước</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('actualBalances.prevBalance', 'Số dư tháng trước')}</p>
                   <p className="mt-1 text-lg font-bold tabular-nums text-white">
                     {previousRecord ? formatCurrency(previousRecord.actual_balance_amount) : '--'}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">{previousMonth ? `Tháng ${previousMonth}` : 'Chưa có'}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">{previousMonth ? t('actualBalances.fromMonth', { month: previousMonth }) : t('actualBalances.notAvailable', 'Chưa có')}</p>
                 </div>
                 <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-3">
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-400/70">Sẽ lưu</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-400/70">{t('actualBalances.willSave', 'Sẽ lưu')}</p>
                   <p className="mt-1 text-lg font-bold tabular-nums text-white">
                     {previewAmount != null ? formatCurrency(previewAmount) : '--'}
                   </p>
@@ -344,7 +346,7 @@ const ActualBalancesPage = () => {
 
               <div className="mt-4 space-y-3">
                 <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Số dư thực</span>
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('actualBalances.currentBalanceLabel', 'Số dư thực')}</span>
                   <input
                     value={row.actual_balance_amount}
                     onChange={(event) => handleFieldChange(jar.jar_key, 'actual_balance_amount', event.target.value)}
@@ -354,11 +356,11 @@ const ActualBalancesPage = () => {
                 </label>
 
                 <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">Ghi chú</span>
+                  <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('actualBalances.notesLabel', 'Ghi chú')}</span>
                   <input
                     value={row.note}
                     onChange={(event) => handleFieldChange(jar.jar_key, 'note', event.target.value)}
-                    placeholder="Ví dụ: tiền thật sự đang giữ"
+                    placeholder={t('actualBalances.notesPlaceholder', 'Ví dụ: tiền thật sự đang giữ')}
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
                   />
                 </label>
@@ -371,7 +373,7 @@ const ActualBalancesPage = () => {
                   disabled={isSavingJar}
                   className="flex-1 rounded-xl bg-(--hero-gradient) py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/20 transition hover:shadow-indigo-900/30 disabled:opacity-50"
                 >
-                  {isSavingJar ? 'Đang lưu...' : 'Lưu hũ này'}
+                  {isSavingJar ? t('actualBalances.saving', 'Đang lưu...') : t('actualBalances.saveThisJar', 'Lưu hũ này')}
                 </button>
               </div>
             </article>
