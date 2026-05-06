@@ -45,7 +45,9 @@ const defaultIncomeForm = {
   month: getCurrentMonthValue(),
   total_amount: '',
   income_date: getTodayDateString(),
-  source_note: ''
+  source_note: '',
+  allocation_mode: 'split_classic',
+  target_jar_key: 'essentials'
 };
 
 const MonthlyPlanPage = () => {
@@ -136,16 +138,27 @@ const MonthlyPlanPage = () => {
     setEditingIncomeId('');
   };
 
-  const syncAutoAllocations = async (monthlyIncomeId, totalAmount, month) => {
+  const syncAutoAllocations = async (monthlyIncomeId, totalAmount, month, allocationMode, targetJarKey) => {
     const existingAllocations = jarAllocations.filter(
       (item) => item.monthly_income_id === monthlyIncomeId || item.month === month
     );
-    const desiredAllocations = Object.entries(CLASSIC_JAR_RATIOS).map(([jarKey, percentage]) => ({
-      jar_key: jarKey,
-      allocated_amount: Math.round((Number(totalAmount) * percentage) / 100),
-      allocation_percentage: percentage,
-      note: t('monthlyPlan.autoAllocatedNote', 'Tự chia theo tỷ lệ 6 hũ.')
-    }));
+    
+    let desiredAllocations = [];
+    if (allocationMode === 'single_jar') {
+      desiredAllocations = [{
+        jar_key: targetJarKey,
+        allocated_amount: Number(totalAmount),
+        allocation_percentage: 100,
+        note: t('monthlyPlan.singleAllocatedNote', 'Nạp thẳng vào hũ.')
+      }];
+    } else {
+      desiredAllocations = Object.entries(CLASSIC_JAR_RATIOS).map(([jarKey, percentage]) => ({
+        jar_key: jarKey,
+        allocated_amount: Math.round((Number(totalAmount) * percentage) / 100),
+        allocation_percentage: percentage,
+        note: t('monthlyPlan.autoAllocatedNote', 'Tự chia theo tỷ lệ 6 hũ.')
+      }));
+    }
 
     await Promise.all(
       existingAllocations
@@ -191,7 +204,9 @@ const MonthlyPlanPage = () => {
         await syncAutoAllocations(
           editingIncomeId,
           savedIncome?.total_amount || incomeAmountPreview || 0,
-          savedIncome?.month || normalizedIncomePayload.month
+          savedIncome?.month || normalizedIncomePayload.month,
+          incomeForm.allocation_mode,
+          incomeForm.target_jar_key
         );
         setMessage(t('monthlyPlan.updateSuccess', 'Đã cập nhật thu nhập tháng.'));
       } else {
@@ -202,7 +217,9 @@ const MonthlyPlanPage = () => {
           await syncAutoAllocations(
             createdIncome._id,
             createdIncome.total_amount || incomeAmountPreview || 0,
-            createdIncome.month || normalizedIncomePayload.month
+            createdIncome.month || normalizedIncomePayload.month,
+            incomeForm.allocation_mode,
+            incomeForm.target_jar_key
           );
         }
 
@@ -217,12 +234,17 @@ const MonthlyPlanPage = () => {
   };
 
   const handleEditIncome = (monthlyIncome) => {
+    const allocations = jarAllocations.filter((a) => a.monthly_income_id === monthlyIncome._id);
+    const singleAllocation = allocations.length === 1 && String(allocations[0].allocation_percentage) === '100' ? allocations[0] : null;
+
     setEditingIncomeId(monthlyIncome._id);
     setIncomeForm({
       month: monthlyIncome.month || '',
       total_amount: monthlyIncome.total_amount?.toString() || '',
       income_date: monthlyIncome.income_date?.slice(0, 10) || `${monthlyIncome.month}-01`,
-      source_note: monthlyIncome.source_note || ''
+      source_note: monthlyIncome.source_note || '',
+      allocation_mode: singleAllocation ? 'single_jar' : 'split_classic',
+      target_jar_key: singleAllocation?.jar_key || 'essentials'
     });
     incomeFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -335,6 +357,37 @@ const MonthlyPlanPage = () => {
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
               />
             </label>
+
+            <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+              <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('monthlyPlan.allocationMode', 'Cách phân bổ')}</span>
+              <select
+                name="allocation_mode"
+                value={incomeForm.allocation_mode}
+                onChange={handleIncomeChange}
+                className="w-full bg-transparent text-sm text-white outline-none"
+              >
+                <option value="split_classic">{t('monthlyPlan.splitClassic', 'Chia 6 hũ chuẩn')}</option>
+                <option value="single_jar">{t('monthlyPlan.singleJar', 'Dồn vào một hũ')}</option>
+              </select>
+            </label>
+
+            {incomeForm.allocation_mode === 'single_jar' ? (
+              <label className="block rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('monthlyPlan.targetJar', 'Hũ nhận')}</span>
+                <select
+                  name="target_jar_key"
+                  value={incomeForm.target_jar_key}
+                  onChange={handleIncomeChange}
+                  className="w-full bg-transparent text-sm text-white outline-none"
+                >
+                  {jars.map((jar) => (
+                    <option key={jar._id} value={jar.jar_key}>
+                      {i18n.language === 'en' ? jar.jar_key.replace(/_/g, ' ').toUpperCase() : jar.display_name_vi}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
             <div className="flex gap-3 pt-1">
               <button

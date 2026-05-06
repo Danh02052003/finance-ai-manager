@@ -129,8 +129,6 @@ const Sidebar = ({ isOpen, onClose }) => {
           <ArrowRightOnRectangleIcon className="h-4 w-4" />
           {isLoggingOut ? t('sidebar.loggingOut') : t('sidebar.logout')}
         </button>
-
-        <p className="px-3 text-[11px] text-slate-600">v1.0 · Mô hình 6 hũ</p>
       </div>
     </aside>
   </>

@@ -201,6 +201,11 @@
     "settleError": "Failed to settle."
   },
   "monthlyPlan": {
+    "allocationMode": "Allocation Mode",
+    "splitClassic": "Split to 6 jars",
+    "singleJar": "Add to single jar",
+    "targetJar": "Target Jar",
+    "singleAllocatedNote": "Added straight to jar.",
     "autoAllocatedNote": "Auto-allocated by 6 jars ratio.",
     "amountHint": "Enter 50 -> 50,000 VND. Enter 1234 -> 1,234 VND. Enter 1500k -> 1,500,000 VND.",
     "sourceHint": "e.g.: April salary, bonus...",

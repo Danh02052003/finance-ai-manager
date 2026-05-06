@@ -201,6 +201,11 @@
     "settleError": "Không thể tất toán."
   },
   "monthlyPlan": {
+    "allocationMode": "Cách phân bổ",
+    "splitClassic": "Chia 6 hũ chuẩn",
+    "singleJar": "Dồn vào một hũ",
+    "targetJar": "Hũ nhận",
+    "singleAllocatedNote": "Nạp thẳng vào hũ.",
     "autoAllocatedNote": "Tự chia theo tỷ lệ 6 hũ.",
     "amountHint": "Nhập 50 -> 50.000đ. Nhập 1234 -> 1.234đ. Nhập 1500k -> 1.500.000đ.",
     "sourceHint": "VD: Lương tháng 4, thưởng...",

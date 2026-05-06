@@ -18,22 +18,7 @@ const getDayKey = (value) => {
   return String(value).slice(0, 10);
 };
 
-const formatTime = (value) => {
-  if (!value) {
-    return '--:--';
-  }
 
-  const parsedValue = new Date(value);
-
-  if (Number.isNaN(parsedValue.getTime())) {
-    return '--:--';
-  }
-
-  return parsedValue.toLocaleTimeString('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
 
 const formatDayTitle = (dayKey, t) => {
   if (!dayKey) {
@@ -101,7 +86,7 @@ const groupTransactionsByDay = (items, t) => {
 };
 
 const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelection, onEdit, onDelete, t }) => (
-  <div className="group grid gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] p-3 transition hover:bg-white/[0.04] md:grid-cols-[auto_80px_minmax(0,1fr)_auto_130px_auto] md:items-center md:gap-4 relative">
+  <div className="group grid gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] p-3 transition hover:bg-white/[0.04] md:grid-cols-[auto_minmax(0,1fr)_auto_130px_auto] md:items-center md:gap-4 relative">
     <label className="inline-flex items-center gap-2 text-sm text-slate-400">
       <input
         aria-label={`Chọn giao dịch ${item.description || index + 1}`}
@@ -110,10 +95,7 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
         onChange={() => onToggleSelection?.(item._id)}
         className="h-4 w-4 rounded border-white/20 bg-transparent accent-indigo-500"
       />
-      <span className="md:hidden">{formatTime(item.transaction_date)}</span>
     </label>
-
-    <div className="hidden text-xs tabular-nums text-slate-500 md:block">{formatTime(item.transaction_date)}</div>
 
     <div className="min-w-0">
       <div className="flex items-start justify-between gap-3 md:block">
