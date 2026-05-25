@@ -4,6 +4,7 @@
     "jars": "6 Hũ",
     "plan": "Kế hoạch",
     "debts": "Nợ nội bộ",
+    "externalDebts": "Nợ người khác",
     "actualBalances": "Số dư thực"
   },
   "nav_group": {
@@ -198,7 +199,26 @@
     "deleteSuccess": "Đã xóa khoản nợ.",
     "deleteError": "Không xóa được.",
     "settleSuccess": "Đã tất toán khoản nợ thành công.",
-    "settleError": "Không thể tất toán."
+    "settleError": "Không thể tất toán.",
+    "extTitle": "Nợ người khác",
+    "newExtDebt": "+ Ghi nợ ngoài",
+    "totalBorrowed": "Tổng nợ người khác",
+    "totalLent": "Tổng tiền cho mượn",
+    "editExtTitle": "Chỉnh sửa nợ ngoài",
+    "createExtTitle": "Ghi nợ ngoài mới",
+    "extTypeLabel": "Loại nợ",
+    "borrowedType": "Mượn tiền người khác",
+    "lentType": "Cho người khác mượn",
+    "personNameLabel": "Tên người mượn/cho mượn",
+    "extReasonPlaceholder": "VD: Mượn tiền mua laptop",
+    "createExtBtn": "Tạo khoản nợ ngoài",
+    "type": "Loại nợ",
+    "person": "Người mượn/cho mượn",
+    "borrowed_label": "Mượn người khác",
+    "lent_label": "Cho mượn",
+    "typeBorrowed": "Mượn của:",
+    "typeLent": "Cho mượn:",
+    "settleConfirmExt": "Đánh dấu khoản nợ này đã tất toán (Đã trả)?"
   },
   "monthlyPlan": {
     "allocationMode": "Cách phân bổ",
@@ -275,7 +295,7 @@
     "currentBalanceLabel": "Số dư thực tế (₫)",
     "updateDateLabel": "Ngày cập nhật",
     "notesLabel": "Ghi chú",
-    "notesPlaceholder": "VD: Nằm trong Vietcombank + Ví MoMo",
+    "notesPlaceholder": "VD: Nằm trong Vietcombank + Tiền mặt",
     "updateBtn": "Cập nhật số dư",
     "updatingBtn": "Đang cập nhật..."
   },
@@ -284,6 +304,7 @@
     "jars": "Phân bổ, đã chi, còn lại và mức chi gợi ý cho từng hũ.",
     "plan": "Nhập thu nhập và để hệ thống tự phân bổ 6 hũ.",
     "debts": "Theo dõi các khoản tạm ứng và hoàn trả giữa các hũ.",
+    "externalDebts": "Theo dõi các khoản vay mượn với người khác.",
     "actual_balances": "Lưu số tiền thực đang giữ, tách riêng khỏi ngân sách vận hành.",
     "settings": "Cấu hình ứng dụng và giao diện."
   }

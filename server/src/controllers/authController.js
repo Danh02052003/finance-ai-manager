@@ -6,7 +6,7 @@ import {
   registerUser,
   serializeUser
 } from '../services/authService.js';
-import { reclassifyImportedTransactions } from '../services/importExcelService.js';
+import { reclassifyImportedTransactions } from '../services/aiClassificationService.js';
 
 const getSessionMeta = (req) => ({
   ipAddress: req.ip,

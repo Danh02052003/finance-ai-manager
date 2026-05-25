@@ -51,6 +51,16 @@ export const navigationItems = [
     showInBottomNav: false
   },
   {
+    to: '/external-debts',
+    labelKey: 'nav.externalDebts',
+    titleKey: 'nav.externalDebts',
+    descKey: 'navDesc.externalDebts',
+    description: 'Theo dõi các khoản vay mượn với người khác.',
+    icon: ExclamationTriangleIcon,
+    group: 'manage',
+    showInBottomNav: false
+  },
+  {
     to: '/actual-balances',
     labelKey: 'nav.actualBalances',
     titleKey: 'nav.actualBalances',

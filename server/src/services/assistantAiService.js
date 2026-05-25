@@ -77,8 +77,7 @@ const WEBSITE_KNOWLEDGE = {
     'trả lời dựa trên dữ liệu hiện có của tài khoản đang đăng nhập',
     'nhắc rõ khi dữ liệu thiếu hoặc chưa có',
     'tư vấn tài chính cơ bản theo mô hình 6 hũ',
-    'phân biệt ngân sách tháng đang quản lý và số dư thực giữ riêng',
-    'giải thích logic sinh lời MoMo, lãi gộp, thuế 5% và lãi ròng'
+    'phân biệt ngân sách tháng đang quản lý và số dư thực giữ riêng'
   ],
   page_targets: [
     {
@@ -327,15 +326,7 @@ const buildAssistantContext = async (user) => {
       month: item.month,
       jar_key: item.jar_key,
       actual_balance_amount: item.actual_balance_amount,
-      note: item.note,
-      yield_enabled: item.yield_enabled,
-      yield_activation_date: item.yield_activation_date,
-      yield_start_date: item.yield_start_date,
-      yield_rate_annual: item.yield_rate_annual,
-      gross_yield_amount: item.gross_yield_amount,
-      withholding_tax_amount: item.withholding_tax_amount,
-      net_yield_amount: item.net_yield_amount,
-      last_yield_processed_at: item.last_yield_processed_at
+      note: item.note
     })),
     recent_transactions: recentTransactions.map((item) => ({
       transaction_date: item.transaction_date,

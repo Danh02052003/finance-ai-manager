@@ -14,10 +14,12 @@ import jarRoutes from './routes/jarRoutes.js';
 import { attachAuth, requireAuth } from './middleware/authMiddleware.js';
 import monthlyIncomeRoutes from './routes/monthlyIncomeRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
+import externalDebtRoutes from './routes/externalDebtRoutes.js';
 
 const app = express();
 const defaultAllowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://127.0.0.1:5173',
   'https://finance-ai-manager.vercel.app'
 ];
@@ -65,6 +67,7 @@ app.use('/api/monthly-incomes', monthlyIncomeRoutes);
 app.use('/api/jar-allocations', jarAllocationRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/debts', debtRoutes);
+app.use('/api/external-debts', externalDebtRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

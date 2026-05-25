@@ -7,3 +7,4 @@ export { default as JarDebt } from './JarDebt.js';
 export { default as MonthlyIncome } from './MonthlyIncome.js';
 export { default as Transaction } from './Transaction.js';
 export { default as User } from './User.js';
+export { default as ExternalDebt } from './ExternalDebt.js';

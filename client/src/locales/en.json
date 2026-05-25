@@ -4,6 +4,7 @@
     "jars": "6 Jars",
     "plan": "Monthly Plan",
     "debts": "Internal Debts",
+    "externalDebts": "External Debts",
     "actualBalances": "Actual Balances"
   },
   "nav_group": {
@@ -198,7 +199,26 @@
     "deleteSuccess": "Debt deleted.",
     "deleteError": "Failed to delete.",
     "settleSuccess": "Debt settled successfully.",
-    "settleError": "Failed to settle."
+    "settleError": "Failed to settle.",
+    "extTitle": "External Debts",
+    "newExtDebt": "+ New External Debt",
+    "totalBorrowed": "Total Borrowed",
+    "totalLent": "Total Lent",
+    "editExtTitle": "Edit External Debt",
+    "createExtTitle": "Create External Debt",
+    "extTypeLabel": "Debt Type",
+    "borrowedType": "Borrowed from others",
+    "lentType": "Lent to others",
+    "personNameLabel": "Creditor/Debtor Name",
+    "extReasonPlaceholder": "e.g., Borrowed for laptop",
+    "createExtBtn": "Create External Debt",
+    "type": "Type",
+    "person": "Person",
+    "borrowed_label": "Borrowed",
+    "lent_label": "Lent",
+    "typeBorrowed": "Borrowed from:",
+    "typeLent": "Lent to:",
+    "settleConfirmExt": "Mark this debt as settled (Paid)?"
   },
   "monthlyPlan": {
     "allocationMode": "Allocation Mode",
@@ -275,7 +295,7 @@
     "currentBalanceLabel": "Actual Balance (₫)",
     "updateDateLabel": "Last Updated",
     "notesLabel": "Notes",
-    "notesPlaceholder": "e.g., Vietcombank + MoMo",
+    "notesPlaceholder": "e.g., Vietcombank + Cash",
     "updateBtn": "Update Balance",
     "updatingBtn": "Updating..."
   },
@@ -284,6 +304,7 @@
     "jars": "Allocations, spent, remaining and suggested daily budgets for each jar.",
     "plan": "Input income and let the system allocate to 6 jars.",
     "debts": "Track advances and refunds between jars.",
+    "externalDebts": "Track borrowings and loans with other people.",
     "actual_balances": "Record actual cash holdings, separate from operational budgets.",
     "settings": "App configuration and interface."
   }

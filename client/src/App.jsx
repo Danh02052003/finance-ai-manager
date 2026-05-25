@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import MonthlyPlanPage from './pages/MonthlyPlanPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import TransactionsPage from './pages/TransactionsPage.jsx';
+import ExternalDebtsPage from './pages/ExternalDebtsPage.jsx';
 
 const App = () => (
   <Routes>
@@ -26,6 +27,7 @@ const App = () => (
         <Route path="/monthly-plan" element={<MonthlyPlanPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/debts" element={<DebtsPage />} />
+        <Route path="/external-debts" element={<ExternalDebtsPage />} />
         <Route path="/jars" element={<JarsPage />} />
         <Route path="/settings" element={<Navigate to="/transactions" replace />} />
       </Route>

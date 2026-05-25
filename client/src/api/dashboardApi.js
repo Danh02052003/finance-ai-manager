@@ -46,6 +46,25 @@ export const deleteDebt = (debtId) =>
     method: 'DELETE'
   });
 
+export const getExternalDebts = () => apiRequest('/external-debts');
+
+export const createExternalDebt = (payload) =>
+  apiRequest('/external-debts', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+
+export const updateExternalDebt = (debtId, payload) =>
+  apiRequest(`/external-debts/${debtId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  });
+
+export const deleteExternalDebt = (debtId) =>
+  apiRequest(`/external-debts/${debtId}`, {
+    method: 'DELETE'
+  });
+
 export const getMonthlyIncomes = () => apiRequest('/monthly-incomes');
 
 export const createMonthlyIncome = (payload) =>
