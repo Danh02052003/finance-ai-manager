@@ -25,12 +25,65 @@ const defaultForm = {
 const ExternalDebtsPage = () => {
   const { t, i18n } = useTranslation();
   const [debts, setDebts] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('open'); // Mặc định hiển thị nợ chưa trả
+  const [filterStatus, setFilterStatus] = useState('open');
   const [form, setForm] = useState(defaultForm);
   const [editingId, setEditingId] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [pendingDebtIds, setPendingDebtIds] = useState([]);
+
+  const markDebtPending = (debtId) => {
+    setPendingDebtIds((current) => (current.includes(debtId) ? current : [...current, debtId]));
+  };
+
+  const clearDebtPending = (debtId) => {
+    setPendingDebtIds((current) => current.filter((id) => id !== debtId));
+  };
+
+  const sortDebtsByDate = (items) =>
+    [...items].sort((firstDebt, secondDebt) => {
+      const firstDate = firstDebt.debt_date || firstDebt.created_at || '';
+      const secondDate = secondDebt.debt_date || secondDebt.created_at || '';
+      return String(secondDate).localeCompare(String(firstDate));
+    });
+
+  const parseMoneyInput = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+
+    const rawValue = `${value ?? ''}`.trim();
+    const sign = rawValue.startsWith('-') ? -1 : 1;
+    const sanitizedValue = rawValue.replace(/^[+-]/, '').replace(/\s+/g, '').replace(/[^\d,.]/g, '');
+    const parsedDigits = Number(sanitizedValue.replace(/[,.]/g, ''));
+
+    if (!sanitizedValue || Number.isNaN(parsedDigits)) return 0;
+
+    return sign * (/[,.]/.test(sanitizedValue) ? parsedDigits : parsedDigits * 1000);
+  };
+
+  const buildExternalDebtPayload = (debt, overrides = {}) => ({
+    creditor_name: debt.creditor_name || '',
+    debt_type: debt.debt_type || 'borrowed',
+    month: debt.month || String(debt.debt_date || '').slice(0, 7),
+    amount: debt.amount,
+    debt_date: String(debt.debt_date || '').slice(0, 10),
+    status: debt.status || 'open',
+    settled_at: debt.settled_at ? String(debt.settled_at).slice(0, 10) : '',
+    reason: debt.reason || '',
+    ...overrides
+  });
+
+  const buildOptimisticExternalDebt = (payload, debtId = `pending-${Date.now()}`) => ({
+    _id: debtId,
+    creditor_name: payload.creditor_name || '',
+    debt_type: payload.debt_type || 'borrowed',
+    month: payload.month || String(payload.debt_date || '').slice(0, 7),
+    amount: parseMoneyInput(payload.amount),
+    debt_date: payload.debt_date,
+    status: payload.status || 'open',
+    settled_at: payload.settled_at || null,
+    reason: payload.reason || ''
+  });
 
   const loadDebts = async () => {
     try {
@@ -77,19 +130,57 @@ const ExternalDebtsPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    const payload = { ...form };
+    const currentEditingId = editingId;
+    const optimisticId = currentEditingId || `pending-${Date.now()}`;
+    const optimisticDebt = buildOptimisticExternalDebt(payload, optimisticId);
+    const existingDebt = debts.find((debt) => debt._id === currentEditingId);
+
+    markDebtPending(optimisticId);
+    setError('');
+    setMessage(currentEditingId ? t('debts.updatePending', 'Đang cập nhật khoản nợ...') : t('debts.createPending', 'Đang tạo khoản nợ...'));
+    resetForm();
+    setDebts((currentDebts) => {
+      if (currentEditingId) {
+        return currentDebts.map((debt) => (debt._id === currentEditingId ? { ...debt, ...optimisticDebt } : debt));
+      }
+
+      return sortDebtsByDate([optimisticDebt, ...currentDebts]);
+    });
+
     try {
-      if (editingId) {
-        await updateExternalDebt(editingId, form);
+      const response = currentEditingId
+        ? await updateExternalDebt(currentEditingId, payload)
+        : await createExternalDebt(payload);
+      const savedDebt = response?.data;
+
+      if (savedDebt) {
+        setDebts((currentDebts) =>
+          sortDebtsByDate(currentDebts.map((debt) => (debt._id === optimisticId ? savedDebt : debt)))
+        );
+      }
+
+      if (currentEditingId) {
         setMessage(t('debts.updateSuccess', 'Đã cập nhật khoản nợ.'));
       } else {
-        await createExternalDebt(form);
         setMessage(t('debts.createSuccess', 'Đã tạo khoản nợ mới.'));
       }
 
-      resetForm();
-      await loadDebts();
+      void loadDebts();
     } catch (requestError) {
+      setDebts((currentDebts) => {
+        if (currentEditingId) {
+          return existingDebt
+            ? currentDebts.map((debt) => (debt._id === currentEditingId ? existingDebt : debt))
+            : currentDebts;
+        }
+
+        return currentDebts.filter((debt) => debt._id !== optimisticId);
+      });
+      setMessage('');
       setError(requestError.message || t('debts.saveError', 'Không lưu được khoản nợ.'));
+    } finally {
+      clearDebtPending(optimisticId);
     }
   };
 
@@ -111,36 +202,62 @@ const ExternalDebtsPage = () => {
   const handleDelete = async (debt) => {
     if (!window.confirm(t('debts.deleteConfirm', 'Xóa khoản nợ này?'))) return;
 
+    markDebtPending(debt._id);
+    setError('');
+    setMessage(t('debts.deletePending', 'Đang xóa khoản nợ...'));
+    setDebts((currentDebts) => currentDebts.filter((item) => item._id !== debt._id));
+    if (editingId === debt._id) resetForm();
+
     try {
       await deleteExternalDebt(debt._id);
-      if (editingId === debt._id) resetForm();
       setMessage(t('debts.deleteSuccess', 'Đã xóa khoản nợ.'));
-      await loadDebts();
+      void loadDebts();
     } catch (requestError) {
+      setDebts((currentDebts) =>
+        currentDebts.some((item) => item._id === debt._id) ? currentDebts : sortDebtsByDate([...currentDebts, debt])
+      );
+      setMessage('');
       setError(requestError.message || t('debts.deleteError', 'Không xóa được.'));
+    } finally {
+      clearDebtPending(debt._id);
     }
   };
 
   const handleQuickSettle = async (debt) => {
     if (!window.confirm(t('debts.settleConfirmExt', 'Đánh dấu khoản nợ này đã tất toán (Đã trả)?'))) return;
-    
+
+    const today = new Date().toISOString().slice(0, 10);
+    const settledDebt = {
+      ...debt,
+      status: 'settled',
+      settled_at: today
+    };
+
+    markDebtPending(debt._id);
+    setError('');
+    setMessage(t('debts.settlePending', 'Đang tất toán khoản nợ...'));
+    setDebts((currentDebts) =>
+      currentDebts.map((item) => (item._id === debt._id ? settledDebt : item))
+    );
+    if (editingId === debt._id) resetForm();
+
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      const updatedDebt = {
-        creditor_name: debt.creditor_name,
-        debt_type: debt.debt_type,
-        month: debt.month,
-        amount: debt.amount,
-        debt_date: debt.debt_date?.slice(0, 10),
+      await updateExternalDebt(debt._id, buildExternalDebtPayload(debt, {
         status: 'settled',
-        settled_at: today,
-        reason: debt.reason
-      };
-      await updateExternalDebt(debt._id, updatedDebt);
+        settled_at: today
+      }));
       setMessage(t('debts.settleSuccess', 'Đã tất toán khoản nợ thành công.'));
-      await loadDebts();
+      void loadDebts();
     } catch (requestError) {
+      setDebts((currentDebts) =>
+        currentDebts.some((item) => item._id === debt._id)
+          ? currentDebts.map((item) => (item._id === debt._id ? debt : item))
+          : sortDebtsByDate([...currentDebts, debt])
+      );
+      setMessage('');
       setError(requestError.message || t('debts.settleError', 'Không thể tất toán.'));
+    } finally {
+      clearDebtPending(debt._id);
     }
   };
 
@@ -251,6 +368,7 @@ const ExternalDebtsPage = () => {
           onEdit={handleEdit} 
           onDelete={handleDelete} 
           onSettle={handleQuickSettle}
+          pendingIds={pendingDebtIds}
         />
       </div>
 

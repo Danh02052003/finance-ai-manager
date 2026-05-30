@@ -85,14 +85,18 @@ const groupTransactionsByDay = (items, t) => {
     .sort((firstItem, secondItem) => secondItem.dayKey.localeCompare(firstItem.dayKey));
 };
 
-const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelection, onEdit, onDelete, t }) => (
-  <div className="group grid gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] p-3 transition hover:bg-white/[0.04] md:grid-cols-[auto_minmax(0,1fr)_auto_130px_auto] md:items-center md:gap-4 relative">
+const TransactionRow = ({ item, index, jarNameByKey, selectedIds, pendingIds, onToggleSelection, onEdit, onDelete, t }) => {
+  const isPending = pendingIds.includes(item._id);
+
+  return (
+  <div className={`group grid gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] p-3 transition hover:bg-white/[0.04] md:grid-cols-[auto_minmax(0,1fr)_auto_130px_auto] md:items-center md:gap-4 relative ${isPending ? 'opacity-60' : ''}`}>
     <label className="inline-flex items-center gap-2 text-sm text-slate-400">
       <input
         aria-label={`Chọn giao dịch ${item.description || index + 1}`}
         type="checkbox"
         checked={selectedIds.includes(item._id)}
         onChange={() => onToggleSelection?.(item._id)}
+        disabled={isPending}
         className="h-4 w-4 rounded border-white/20 bg-transparent accent-indigo-500"
       />
     </label>
@@ -128,6 +132,7 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
         type="button"
         className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.08] hover:text-white"
         onClick={() => onEdit?.(item)}
+        disabled={isPending}
         aria-label={`Sửa giao dịch ${item.description || index + 1}`}
       >
         <PencilSquareIcon className="h-4 w-4" />
@@ -136,13 +141,15 @@ const TransactionRow = ({ item, index, jarNameByKey, selectedIds, onToggleSelect
         type="button"
         className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-400"
         onClick={() => onDelete?.(item)}
+        disabled={isPending}
         aria-label={`Xóa giao dịch ${item.description || index + 1}`}
       >
         <TrashIcon className="h-4 w-4" />
       </button>
     </div>
   </div>
-);
+  );
+};
 
 const TransactionTable = ({
   items,
@@ -151,6 +158,7 @@ const TransactionTable = ({
   jarNameByKey = {},
   selectedIds = [],
   highlightDate = '',
+  pendingIds = [],
   onToggleSelection,
   onToggleSelectAll,
   onDeleteSelected,
@@ -158,8 +166,9 @@ const TransactionTable = ({
   onDelete
 }) => {
   const { t } = useTranslation();
+  const selectableItems = items.filter((item) => !pendingIds.includes(item._id));
   const areAllVisibleSelected =
-    items.length > 0 && items.every((item) => selectedIds.includes(item._id));
+    selectableItems.length > 0 && selectableItems.every((item) => selectedIds.includes(item._id));
   const dayGroups = groupTransactionsByDay(items, t);
 
   return (
@@ -175,7 +184,7 @@ const TransactionTable = ({
             type="button"
             className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08] disabled:opacity-40"
             onClick={onToggleSelectAll}
-            disabled={!items.length}
+            disabled={!selectableItems.length}
           >
             {areAllVisibleSelected ? t('transactions.deselect', { defaultValue: 'Bỏ chọn' }) : t('transactions.selectAll', { defaultValue: 'Chọn tất cả' })}
           </button>
@@ -238,6 +247,7 @@ const TransactionTable = ({
                       index={index}
                       jarNameByKey={jarNameByKey}
                       selectedIds={selectedIds}
+                      pendingIds={pendingIds}
                       onToggleSelection={onToggleSelection}
                       onEdit={onEdit}
                       onDelete={onDelete}

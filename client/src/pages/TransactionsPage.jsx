@@ -87,6 +87,33 @@ const parseAmountSearchValue = (value) => {
   return hasCurrencySuffix ? Math.round(parsed) : Math.round(parsed);
 };
 
+const parseMoneyInput = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+
+  const rawValue = `${value ?? ''}`.trim();
+  const sign = rawValue.startsWith('-') ? -1 : 1;
+  const sanitizedValue = rawValue.replace(/^[+-]/, '').replace(/\s+/g, '').replace(/[^\d,.]/g, '');
+  const parsedDigits = Number(sanitizedValue.replace(/[,.]/g, ''));
+
+  if (!sanitizedValue || Number.isNaN(parsedDigits)) return 0;
+
+  return sign * (/[,.]/.test(sanitizedValue) ? parsedDigits : parsedDigits * 1000);
+};
+
+const sortTransactionsByDate = (items) =>
+  [...items].sort((firstTransaction, secondTransaction) => {
+    const firstDate = firstTransaction.transaction_date || firstTransaction.created_at || '';
+    const secondDate = secondTransaction.transaction_date || secondTransaction.created_at || '';
+    return String(secondDate).localeCompare(String(firstDate));
+  });
+
+const buildOptimisticTransaction = (payload, transactionId = `pending-${Date.now()}`) => ({
+  _id: transactionId,
+  ...payload,
+  amount: parseMoneyInput(payload.amount),
+  created_at: new Date().toISOString()
+});
+
 const isIncomeDirection = (value) => value === 'income_adjustment';
 
 const TransactionsPage = () => {
@@ -107,6 +134,15 @@ const TransactionsPage = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingTransactionIds, setPendingTransactionIds] = useState([]);
+
+  const markTransactionPending = (transactionId) => {
+    setPendingTransactionIds((current) => (current.includes(transactionId) ? current : [...current, transactionId]));
+  };
+
+  const clearTransactionPending = (transactionId) => {
+    setPendingTransactionIds((current) => current.filter((id) => id !== transactionId));
+  };
 
   const availableJars = useMemo(() => jars.filter((jar) => jar?.jar_key), [jars]);
   const jarNameByKey = useMemo(
@@ -164,9 +200,9 @@ const TransactionsPage = () => {
 
   const selectedJarName = jarNameByKey[selectedJarFilter] || '';
 
-  const loadTransactions = async () => {
+  const loadTransactions = async ({ showLoading = true } = {}) => {
     try {
-      setIsLoading(true);
+      if (showLoading) setIsLoading(true);
       const [transactionResponse, jarResponse] = await Promise.all([getTransactions(), getJars()]);
       const loadedTransactions = Array.isArray(transactionResponse.data) ? transactionResponse.data : [];
 
@@ -177,7 +213,7 @@ const TransactionsPage = () => {
     } catch {
       setError(t('transactions.loadError', 'Không tải được danh sách giao dịch.'));
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
@@ -268,20 +304,65 @@ const TransactionsPage = () => {
       is_ai_classified: false
     };
 
+    const currentEditingId = editingId;
+    const optimisticId = currentEditingId || `pending-${Date.now()}`;
+    const optimisticTransaction = buildOptimisticTransaction(payload, optimisticId);
+    const existingTransaction = transactions.find((transaction) => transaction._id === currentEditingId);
+
+    markTransactionPending(optimisticId);
+    setError('');
+    setMessage(currentEditingId ? t('transactions.updatePending', 'Đang cập nhật giao dịch...') : t('transactions.createPending', 'Đang lưu giao dịch...'));
+    closeEditor();
+    setSelectedMonthFilter(payload.month);
+    setTransactions((currentTransactions) => {
+      if (currentEditingId) {
+        return currentTransactions.map((transaction) =>
+          transaction._id === currentEditingId ? { ...transaction, ...optimisticTransaction } : transaction
+        );
+      }
+
+      return sortTransactionsByDate([optimisticTransaction, ...currentTransactions]);
+    });
+
     try {
-      if (editingId) {
-        await updateTransaction(editingId, payload);
+      const response = currentEditingId
+        ? await updateTransaction(currentEditingId, payload)
+        : await createTransaction(payload);
+      const savedTransaction = response?.data;
+
+      if (savedTransaction) {
+        setTransactions((currentTransactions) =>
+          sortTransactionsByDate(
+            currentTransactions.map((transaction) =>
+              transaction._id === optimisticId ? savedTransaction : transaction
+            )
+          )
+        );
+      }
+
+      if (currentEditingId) {
         setMessage(isIncomeDirection(payload.direction) ? t('transactions.successUpdateIncome', 'Đã cập nhật khoản thu.') : t('transactions.successUpdateExpense', 'Đã cập nhật giao dịch.'));
       } else {
-        await createTransaction(payload);
         setMessage(isIncomeDirection(payload.direction) ? t('transactions.successAddIncome', 'Đã ghi nhận thu vào hũ.') : t('transactions.successAddExpense', 'Đã lưu chi tiêu.'));
       }
 
-      closeEditor();
-      setSelectedMonthFilter(payload.month);
-      await loadTransactions();
+      void loadTransactions({ showLoading: false });
     } catch (requestError) {
+      setTransactions((currentTransactions) => {
+        if (currentEditingId) {
+          return existingTransaction
+            ? currentTransactions.map((transaction) =>
+                transaction._id === currentEditingId ? existingTransaction : transaction
+              )
+            : currentTransactions;
+        }
+
+        return currentTransactions.filter((transaction) => transaction._id !== optimisticId);
+      });
+      setMessage('');
       setError(requestError.message || t('transactions.errorSave', 'Không lưu được giao dịch.'));
+    } finally {
+      clearTransactionPending(optimisticId);
     }
   };
 
@@ -326,24 +407,42 @@ const TransactionsPage = () => {
 
   const handleDelete = async (transaction) => {
     if (!window.confirm(t('transactions.confirmDelete', 'Xóa giao dịch này?'))) return;
+
+    setError('');
+    setMessage(t('transactions.deletePending', 'Đang xóa giao dịch...'));
+    setTransactions((currentTransactions) =>
+      currentTransactions.filter((item) => item._id !== transaction._id)
+    );
+    setSelectedIds((current) => current.filter((id) => id !== transaction._id));
+    if (editingId === transaction._id) closeEditor();
+
     try {
       await deleteTransaction(transaction._id);
-      if (editingId === transaction._id) closeEditor();
       setMessage(t('transactions.successDelete', 'Đã xóa giao dịch.'));
-      await loadTransactions();
+      void loadTransactions({ showLoading: false });
     } catch (requestError) {
+      setTransactions((currentTransactions) =>
+        currentTransactions.some((item) => item._id === transaction._id)
+          ? currentTransactions
+          : sortTransactionsByDate([...currentTransactions, transaction])
+      );
+      setMessage('');
       setError(requestError.message || t('transactions.errorDelete', 'Không xóa được giao dịch.'));
     }
   };
 
   const handleToggleSelection = (transactionId) => {
+    if (pendingTransactionIds.includes(transactionId)) return;
+
     setSelectedIds((current) =>
       current.includes(transactionId) ? current.filter((id) => id !== transactionId) : [...current, transactionId]
     );
   };
 
   const handleToggleSelectAll = () => {
-    const visibleIds = filteredTransactions.map((item) => item._id);
+    const visibleIds = filteredTransactions
+      .filter((item) => !pendingTransactionIds.includes(item._id))
+      .map((item) => item._id);
     const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
     setSelectedIds((current) =>
       allSelected ? current.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...current, ...visibleIds]))
@@ -351,16 +450,44 @@ const TransactionsPage = () => {
   };
 
   const handleDeleteSelected = async () => {
-    if (!selectedIds.length || !window.confirm(t('transactions.confirmDeleteBulk', { count: selectedIds.length }, `Xóa ${selectedIds.length} giao dịch đã chọn?`))) return;
-    try {
-      await Promise.all(selectedIds.map((transactionId) => deleteTransaction(transactionId)));
-      if (editingId && selectedIds.includes(editingId)) closeEditor();
-      setSelectedIds([]);
-      setMessage(t('transactions.successDeleteBulk', { count: selectedIds.length }, `Đã xóa ${selectedIds.length} giao dịch.`));
-      await loadTransactions();
-    } catch (requestError) {
-      setError(requestError.message || t('transactions.errorDeleteBulk', 'Không xóa được các giao dịch đã chọn.'));
+    const selectableSelectedIds = selectedIds.filter((transactionId) => !pendingTransactionIds.includes(transactionId));
+
+    if (!selectableSelectedIds.length || !window.confirm(t('transactions.confirmDeleteBulk', { count: selectableSelectedIds.length }, `Xóa ${selectableSelectedIds.length} giao dịch đã chọn?`))) return;
+
+    const idsToDelete = [...selectableSelectedIds];
+    const deletedTransactions = transactions.filter((transaction) => idsToDelete.includes(transaction._id));
+
+    setError('');
+    setMessage(t('transactions.deleteBulkPending', { count: idsToDelete.length, defaultValue: `Đang xóa ${idsToDelete.length} giao dịch...` }));
+    setTransactions((currentTransactions) =>
+      currentTransactions.filter((transaction) => !idsToDelete.includes(transaction._id))
+    );
+    setSelectedIds([]);
+    if (editingId && idsToDelete.includes(editingId)) closeEditor();
+
+    const results = await Promise.allSettled(idsToDelete.map((transactionId) => deleteTransaction(transactionId)));
+    const failedIds = idsToDelete.filter((transactionId, index) => results[index].status === 'rejected');
+
+    if (failedIds.length) {
+      const failedTransactions = deletedTransactions.filter((transaction) => failedIds.includes(transaction._id));
+      const firstFailure = results.find((result) => result.status === 'rejected')?.reason;
+
+      setTransactions((currentTransactions) =>
+        sortTransactionsByDate([
+          ...currentTransactions,
+          ...failedTransactions.filter(
+            (transaction) => !currentTransactions.some((item) => item._id === transaction._id)
+          )
+        ])
+      );
+      setSelectedIds(failedIds);
+      setMessage('');
+      setError(firstFailure?.message || t('transactions.errorDeleteBulk', 'Không xóa được các giao dịch đã chọn.'));
+    } else {
+      setMessage(t('transactions.successDeleteBulk', { count: idsToDelete.length }, `Đã xóa ${idsToDelete.length} giao dịch.`));
     }
+
+    void loadTransactions({ showLoading: false });
   };
 
   const clearFilters = () => {
@@ -506,6 +633,7 @@ const TransactionsPage = () => {
         title={selectedJarName ? `${selectedJarName} / ${selectedMonthFilter || t('common.all').toLowerCase()}` : t('transactions.recent')}
         jarNameByKey={jarNameByKey}
         selectedIds={selectedIds}
+        pendingIds={pendingTransactionIds}
         onToggleSelection={handleToggleSelection}
         onToggleSelectAll={handleToggleSelectAll}
         onDeleteSelected={handleDeleteSelected}

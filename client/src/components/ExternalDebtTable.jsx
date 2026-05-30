@@ -7,7 +7,7 @@ const statusStyles = {
   settled: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
 };
 
-const ExternalDebtTable = ({ items, onEdit, onDelete, onSettle }) => {
+const ExternalDebtTable = ({ items, onEdit, onDelete, onSettle, pendingIds = [] }) => {
   const { t } = useTranslation();
   
   return (
@@ -25,7 +25,7 @@ const ExternalDebtTable = ({ items, onEdit, onDelete, onSettle }) => {
         items.map((item, index) => (
           <article
             key={item._id || `ext-${index}`}
-            className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 transition-all hover:bg-white/[0.04] hover:shadow-lg hover:shadow-indigo-500/5"
+            className={`group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 transition-all hover:bg-white/[0.04] hover:shadow-lg hover:shadow-indigo-500/5 ${pendingIds.includes(item._id) ? 'opacity-60' : ''}`}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative">
@@ -62,13 +62,14 @@ const ExternalDebtTable = ({ items, onEdit, onDelete, onSettle }) => {
                   <button 
                     type="button" 
                     onClick={() => onSettle?.(item)} 
-                    className="flex-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 py-2.5 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                    disabled={pendingIds.includes(item._id)}
+                    className="flex-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 py-2.5 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/20 disabled:cursor-wait disabled:opacity-50 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
                   >
                     {t('debts.settleNow', 'Tất toán ngay')}
                   </button>
                 )}
-                <button type="button" onClick={() => onEdit?.(item)} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06] hover:text-white">{t('common.edit', 'Sửa')}</button>
-                <button type="button" onClick={() => onDelete?.(item)} className="flex-none rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-2.5 text-xs font-medium text-rose-400 transition hover:bg-rose-500/10 hover:text-rose-300">{t('common.delete', 'Xóa')}</button>
+                <button type="button" onClick={() => onEdit?.(item)} disabled={pendingIds.includes(item._id)} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.06] hover:text-white disabled:cursor-wait disabled:opacity-50">{t('common.edit', 'Sửa')}</button>
+                <button type="button" onClick={() => onDelete?.(item)} disabled={pendingIds.includes(item._id)} className="flex-none rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-2.5 text-xs font-medium text-rose-400 transition hover:bg-rose-500/10 hover:text-rose-300 disabled:cursor-wait disabled:opacity-50">{t('common.delete', 'Xóa')}</button>
               </div>
             </div>
           </article>
@@ -98,7 +99,7 @@ const ExternalDebtTable = ({ items, onEdit, onDelete, onSettle }) => {
           <tbody className="divide-y divide-white/[0.04]">
             {items.length > 0 ? (
               items.map((item, index) => (
-                <tr key={item._id || `ext-${index}`} className="group transition hover:bg-white/[0.02]">
+                <tr key={item._id || `ext-${index}`} className={`group transition hover:bg-white/[0.02] ${pendingIds.includes(item._id) ? 'opacity-60' : ''}`}>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full shadow-sm ${item.status === 'settled' ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-amber-500 shadow-amber-500/50'}`} title={item.status === 'open' ? t('debts.statusOpen', 'Đang mở') : t('debts.statusSettled', 'Đã tất toán')} />
@@ -127,7 +128,8 @@ const ExternalDebtTable = ({ items, onEdit, onDelete, onSettle }) => {
                         <button 
                           type="button" 
                           onClick={() => onSettle?.(item)} 
-                          className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/20 hover:scale-105 active:scale-95 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                          disabled={pendingIds.includes(item._id)}
+                          className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/20 hover:scale-105 active:scale-95 disabled:cursor-wait disabled:opacity-50 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
                           title={t('debts.settle', 'Tất toán')}
                         >
                           {t('debts.settle', 'Tất toán')}
@@ -136,7 +138,8 @@ const ExternalDebtTable = ({ items, onEdit, onDelete, onSettle }) => {
                       <button 
                         type="button" 
                         onClick={() => onEdit?.(item)} 
-                        className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-1.5 text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
+                        disabled={pendingIds.includes(item._id)}
+                        className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-1.5 text-slate-300 transition hover:bg-white/[0.06] hover:text-white disabled:cursor-wait disabled:opacity-50"
                         title={t('common.edit', 'Sửa')}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -144,7 +147,8 @@ const ExternalDebtTable = ({ items, onEdit, onDelete, onSettle }) => {
                       <button 
                         type="button" 
                         onClick={() => onDelete?.(item)} 
-                        className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-1.5 text-rose-400 transition hover:bg-rose-500/10 hover:text-rose-300"
+                        disabled={pendingIds.includes(item._id)}
+                        className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-1.5 text-rose-400 transition hover:bg-rose-500/10 hover:text-rose-300 disabled:cursor-wait disabled:opacity-50"
                         title={t('common.delete', 'Xóa')}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
