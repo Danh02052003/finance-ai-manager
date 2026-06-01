@@ -108,18 +108,16 @@ const JarsPage = () => {
     loadJars();
   }, []);
 
-  const availableMonths = useMemo(
-    () =>
-      Array.from(
-        new Set([
-          ...monthlyIncomes.map((item) => item.month),
-          ...jarAllocations.map((item) => item.month),
-          ...actualBalances.map((item) => item.month),
-          ...transactions.map((item) => item.month)
-        ].filter(Boolean))
-      ).sort().reverse(),
-    [actualBalances, jarAllocations, monthlyIncomes, transactions]
-  );
+  const availableMonths = useMemo(() => {
+    const months = new Set([
+      ...monthlyIncomes.map((item) => item.month),
+      ...jarAllocations.map((item) => item.month),
+      ...actualBalances.map((item) => item.month),
+      ...transactions.map((item) => item.month)
+    ].filter(Boolean));
+    months.add(new Date().toISOString().slice(0, 7));
+    return Array.from(months).sort().reverse();
+  }, [actualBalances, jarAllocations, monthlyIncomes, transactions]);
 
   const selectedMonthAllocations = jarAllocations.filter((item) => item.month === selectedMonth);
   const selectedMonthTransactions = transactions.filter((item) => item.month === selectedMonth);

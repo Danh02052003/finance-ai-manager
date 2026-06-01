@@ -149,10 +149,11 @@ const TransactionsPage = () => {
     () => Object.fromEntries(availableJars.map((jar) => [jar.jar_key, jar.display_name_vi])),
     [availableJars]
   );
-  const availableMonthFilters = useMemo(
-    () => Array.from(new Set(transactions.map((item) => item.month).filter(Boolean))).sort().reverse(),
-    [transactions]
-  );
+  const availableMonthFilters = useMemo(() => {
+    const months = new Set(transactions.map((item) => item.month).filter(Boolean));
+    months.add(currentMonth());
+    return Array.from(months).sort().reverse();
+  }, [transactions]);
 
   const filteredTransactions = useMemo(() => {
     const exactAmountQuery = parseAmountSearchValue(searchTerm);
