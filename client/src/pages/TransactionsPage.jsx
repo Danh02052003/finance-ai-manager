@@ -42,6 +42,7 @@ const categoryOptions = [
   { value: 'investment', label: 'Đầu tư' },
   { value: 'learning', label: 'Học tập' },
   { value: 'family', label: 'Gia đình' },
+  { value: 'relatives', label: 'Người thân' },
   { value: 'charity', label: 'Từ thiện' },
   { value: 'personal_care', label: 'Chăm sóc cá nhân' },
   { value: 'shopping', label: 'Mua sắm' },

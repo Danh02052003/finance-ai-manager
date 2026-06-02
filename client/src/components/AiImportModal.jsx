@@ -155,6 +155,7 @@ const AiImportModal = ({ isOpen, onClose, jars, onSaveBulk }) => {
                             <option value="investment">Đầu tư</option>
                             <option value="learning">Học tập</option>
                             <option value="family">Gia đình</option>
+                            <option value="relatives">Người thân</option>
                             <option value="charity">Từ thiện</option>
                             <option value="personal_care">Chăm sóc cá nhân</option>
                             <option value="shopping">Mua sắm</option>

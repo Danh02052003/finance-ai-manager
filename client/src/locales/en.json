@@ -4,7 +4,7 @@
     "jars": "6 Jars",
     "plan": "Monthly Plan",
     "debts": "Internal Debts",
-    "externalDebts": "External Debts",
+    "externalDebts": "Loans & Borrowing",
     "actualBalances": "Actual Balances"
   },
   "nav_group": {
@@ -156,6 +156,7 @@
     "transport": "Transport",
     "health": "Health",
     "entertainment": "Entertainment",
+    "relatives": "Relatives",
     "uncategorized": "Uncategorized"
   },
   "debts": {
@@ -200,7 +201,7 @@
     "deleteError": "Failed to delete.",
     "settleSuccess": "Debt settled successfully.",
     "settleError": "Failed to settle.",
-    "extTitle": "External Debts",
+    "extTitle": "Loans & Borrowing",
     "newExtDebt": "+ New External Debt",
     "totalBorrowed": "Total Borrowed",
     "totalLent": "Total Lent",

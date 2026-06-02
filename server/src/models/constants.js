@@ -17,6 +17,7 @@ export const TRANSACTION_CATEGORIES = [
   'investment',
   'learning',
   'family',
+  'relatives',
   'charity',
   'personal_care',
   'shopping',

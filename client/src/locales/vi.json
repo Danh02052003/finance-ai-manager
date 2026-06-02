@@ -4,7 +4,7 @@
     "jars": "6 Hũ",
     "plan": "Kế hoạch",
     "debts": "Nợ nội bộ",
-    "externalDebts": "Nợ người khác",
+    "externalDebts": "Vay & Cho vay",
     "actualBalances": "Số dư thực"
   },
   "nav_group": {
@@ -156,6 +156,7 @@
     "transport": "Di chuyển",
     "health": "Sức khỏe",
     "entertainment": "Giải trí",
+    "relatives": "Người thân",
     "uncategorized": "Chưa phân loại"
   },
   "debts": {
@@ -200,7 +201,7 @@
     "deleteError": "Không xóa được.",
     "settleSuccess": "Đã tất toán khoản nợ thành công.",
     "settleError": "Không thể tất toán.",
-    "extTitle": "Nợ người khác",
+    "extTitle": "Vay & Cho vay",
     "newExtDebt": "+ Ghi nợ ngoài",
     "totalBorrowed": "Tổng nợ người khác",
     "totalLent": "Tổng tiền cho mượn",

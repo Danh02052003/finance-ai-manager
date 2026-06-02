@@ -297,7 +297,7 @@ const ExternalDebtsPage = () => {
       >
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">{t('debts.extTitle', 'Nợ người khác')}</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">{t('debts.extTitle', 'Vay & Cho vay')}</h1>
             <p className="mt-1 text-sm text-slate-400">Theo dõi các khoản tiền mượn người khác hoặc cho người khác mượn.</p>
           </div>
           <button 

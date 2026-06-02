@@ -11,6 +11,7 @@ ALLOWED_CATEGORIES = {
     "investment",
     "learning",
     "family",
+    "relatives",
     "charity",
     "personal_care",
     "shopping",
@@ -25,12 +26,13 @@ def _build_prompt(items: list[dict[str, Any]]) -> str:
     return (
         "You classify Vietnamese personal finance transactions for a 6-jar budgeting app.\n"
         "Each item is already one transaction.\n"
-        "Allowed categories only: food_drink, bills, investment, learning, family, charity, personal_care, shopping, transport, health, entertainment, uncategorized.\n"
+        "Allowed categories only: food_drink, bills, investment, learning, family, charity, personal_care, shopping, transport, health, entertainment, relatives, uncategorized.\n"
         "Use description as the main signal. Try your best to logically deduce the category. Only use uncategorized for pure gibberish or completely unrelated text.\n"
         "Important hints for Vietnamese shorthand and mapping:\n"
         "- 4g, 5g, nap dt, nap dien thoai, netflix, internet, wifi, dien, nuoc, tien nha => bills\n"
         "- cf, cafe, ca phe, tra sua, bun, chao, mi, pocari, warrior, nuoc, sua, do an, do uong, thit, ca, rau => food_drink\n"
-        "- cho Han, bao, me, bo, nguoi than, mua do cho, may loc, do gia dung, noi that, tivi, tu lanh, may giat, cho nha => family\n"
+        "- cho Han, bao, me, bo, mua do cho, may loc, do gia dung, noi that, tivi, tu lanh, may giat, cho nha => family\n"
+        "- nguoi than, ho hang, cho ho hang, anh em, ho hang no, em ho, chi ho => relatives\n"
         "- chung khoan, co phieu, dau tu, workshop => investment\n"
         "- sach, khoa hoc, hoc phi => learning\n"
         "- tu thien, ung ho, donate => charity\n"
@@ -126,7 +128,7 @@ def _build_story_prompt(story: str, context_date: str) -> str:
         "If 'hôm bữa' is mentioned, context date - 2 days.\n"
         "If 'ngày mốt' is mentioned, context date + 2 days.\n"
         "If the story contains dates in DD/MM or DD/MM/YYYY format, parse them but ALWAYS output the final JSON date in YYYY-MM-DD.\n"
-        "Allowed categories: food_drink, bills, investment, learning, family, charity, personal_care, shopping, transport, health, entertainment, uncategorized.\n"
+        "Allowed categories: food_drink, bills, investment, learning, family, charity, personal_care, shopping, transport, health, entertainment, relatives, uncategorized.\n"
         "Allowed jars: essentials, education, enjoyment, financial_freedom, charity, long_term_saving.\n"
         "Jar mapping rules (CRITICAL):\n"
         "- essentials: daily eating, parking, buying water/drinks.\n"
